@@ -3,6 +3,7 @@
   <component name="Black">
     <option name="sdkName" value="saber" />
   </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="WSL (Ubuntu): (/home/theru/miniconda3/envs/rapids/bin/python)" project-jdk-type="Python SDK" />
   <component name="PyCharmDSProjectLayout">
     <option name="id" value="JupyterRightHiddenStructureLayout" />
   </component>
