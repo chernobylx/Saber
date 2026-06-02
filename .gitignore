@@ -1,3 +1,4 @@
-/data/garbage/
-/data
-.idea
+data/
+.idea/
+*.xml
+*.iml
