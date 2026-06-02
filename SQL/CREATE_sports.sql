@@ -5,6 +5,7 @@ CREATE TABLE sports(
     sport_id INT PRIMARY KEY,-- MLB = 1
     sport_name VARCHAR(255) UNIQUE NOT NULL,-- e.g. Major League Baseball
     sport_code VARCHAR(4) UNIQUE NOT NULL,
+    sport_abbr VARCHAR(255) UNIQUE NOT NULL,
     sort_order INT UNIQUE NOT NULL CHECK ( sort_order > 0 ),
     sport_link varchar(255) UNIQUE NOT NULL,
     ---------------------------------------------------------------------------------------
