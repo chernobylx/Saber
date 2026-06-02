@@ -22,3 +22,11 @@ def get_leagues()-> pl.DataFrame:
     except Exception as e:
         raise
 
+def get_divisions()-> pl.DataFrame:
+    """Retrieve a DataFrame of available divisions from statsapi.mlb.com"""
+    try:
+        divisions = get(url+'/divisions').json()['divisions']
+        divisions = pl.json_normalize(divisions)
+        return divisions
+    except Exception as e:
+        raise
