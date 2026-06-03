@@ -17,6 +17,7 @@ class LeagueSchema(dy.Schema):
     sport_id = dy.UInt32(nullable=False,primary_key=True)
     league_name = dy.String(nullable=False, unique=False)
     league_abbr = dy.String(nullable=False, unique=True)
+    last_season = dy.UInt32(nullable=False)
     is_active = dy.Bool(nullable=False)
     sort_order = dy.UInt32(nullable=False, unique=True)
     league_link = dy.String(nullable=False, unique=True, regex=link_regex)
@@ -79,6 +80,7 @@ def transform_leagues(df: pl.LazyFrame)-> pl.LazyFrame:
         pl.col('sport.id').alias('sport_id'),
         pl.col('name').alias('league_name'),
         pl.col('abbreviation').alias('league_abbr'),
+        pl.col('season').alias('last_season'),
         pl.col('active').alias('is_active'),
         pl.col('sortOrder').alias('sort_order'),
         pl.col('link').alias('league_link')
