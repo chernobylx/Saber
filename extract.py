@@ -1,7 +1,9 @@
 from statsapi import get as api
 import polars as pl
 from requests import get as GET
-from typing import Callable
+from typing import Callable, Iterable
+from collections.abc import Iterable
+
 url = 'https://statsapi.mlb.com/api/v1/'
 
 def get(endpoint:str)-> pl.DataFrame:
@@ -35,8 +37,24 @@ def get_divisions()-> pl.DataFrame:
     except Exception:
         raise
 
+def get_seasons(years: Iterable[int]=range(2026,1893,-1), sport_id: int=0)-> pl.DataFrame:
+    """
+    Retrieve season parameters for each league active in a given sport and year (or iterable of years) from statsapi.mlb.com
+    If sport_id<=0 then all leagues are returned
+    """
+    link = f'{url}/leagues?hydrate=schedule&seasons={','.join([str(year)for year in years])}'
+    if sport_id>0:
+        link += f'&sportId={sport_id}'
+    try:
+        seasons = GET(link).json()
+        seasons = pl.json_normalize(seasons['leagues'])
+        return seasons
+    except Exception:
+        raise
+
 endpoints:dict[str, Callable[[],pl.DataFrame]] = {
     'sports': get_sports,
     'leagues': get_leagues,
-    'divisions': get_divisions
+    'divisions': get_divisions,
+    'seasons': get_seasons
 }
