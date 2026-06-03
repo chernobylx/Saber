@@ -22,6 +22,54 @@ class LeagueSchema(dy.Schema):
     sort_order = dy.UInt32(nullable=False, unique=True)
     league_link = dy.String(nullable=False, unique=True, regex=link_regex)
 
+class SeasonSchema(dy.Schema):
+    league_id = dy.UInt32(nullable=False, primary_key=True)
+    season = dy.UInt32(nullable=False, primary_key=True)
+    n_games = dy.UInt32(nullable=False)
+    n_teams = dy.UInt32(nullable=False)
+    has_divisions = dy.Bool(nullable=False)
+    n_wildcard_teams = dy.UInt32(nullable=False)
+    pre_season_start = dy.Date(nullable=False)
+    pre_season_end = dy.Date(nullable=False)
+    season_start = dy.Date(nullable=False)
+    season_end = dy.Date(nullable=False)
+    spring_start = dy.Date(nullable=True)
+    spring_end = dy.Date(nullable=True)
+    regular_start = dy.Date(nullable=False)
+    first_half_end = dy.Date(nullable=True)
+    all_star_game = dy.Date(nullable=True)
+    second_half_start = dy.Date(nullable=True)
+    regular_end = dy.Date(nullable=False)
+    post_start = dy.Date(nullable=True)
+    post_end = dy.Date(nullable=True)
+    off_start = dy.Date(nullable=False)
+    off_end = dy.Date(nullable=False)
+
+    @dy.rule()
+    def general_causality(cls)->pl.Expr:
+        expr = pl.col('pre_season_start') < pl.col('pre_season_end')
+        expr &= pl.col('pre_season_end') <= pl.col('season_start')
+        expr &= pl.col('season_start') < pl.col('season_end')
+        expr &= pl.col('season_start') <= pl.col('regular_start')
+        expr &= pl.col('regular_start') < pl.col('regular_end')
+        expr &= pl.col('regular_end') <= pl.col('season_end')
+        expr &= pl.col('season_end') <= pl.col('off_start')
+        expr &= pl.col('off_start') < pl.col('off_end')
+        return expr
+
+    @dy.rule()
+    def all_star_causality(cls):
+        expr = pl.col('first_half_end') < pl.col('all_star_game') < pl.col('second_half_start')
+        expr |= (
+                    (pl.col('all_star_game').is_null() &
+                    (pl.col('first_half_start') < pl.col('second_half_start')))
+                )
+        expr |= pl.all_horizontal(
+                    pl.col('all_star_game').is_null(),
+                    pl.col('first_half_start').is_null(),
+                    pl.col('second_half_start').is_null()
+                )
+        return expr
 
 class SportCollection(dy.Collection):
     sports: dy.LazyFrame[SportSchema]
