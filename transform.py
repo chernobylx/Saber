@@ -1,5 +1,5 @@
 import polars as pl
-from polars import selectors as cs
+from polars import selectors as cs, LazyFrame
 import dataframely as dy
 from dataframely.exc import ValidationError
 from dataframely.filter_result import FilterResult, LazyFilterResult
@@ -61,7 +61,16 @@ class SeasonSchema(dy.Schema):
         expr &= (pl.col('first_half_end')<=pl.col('second_half_start'))
         return expr
 
+class DivisionSchema(dy.Schema):
+    division_id = dy.Int64(nullable=False, primary_key=True)
+    division_name = dy.String(nullable=False, unique=True)
+    league_id = dy.Int64(nullable=False)
+    is_active = dy.Bool(nullable=False)
+    division_link = dy.String(nullable=False, regex=link_regex, unique=True)
 
+class DivisionSeasonsSchema(dy.Schema):
+    division_id = dy.Int64(nullable=False, primary_key=True)
+    season = dy.Int64(nullable=False, primary_key=True)
 
 class SportCollection(dy.Collection):
     sports: dy.LazyFrame[SportSchema]
@@ -204,8 +213,47 @@ def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame[SeasonSchema]:
 
     return lf
 
+def transform_divisions(divisions: pl.LazyFrame, leagues:pl.LazyFrame)-> tuple[pl.LazyFrame, pl.LazyFrame]:
+    division_names = divisions.join(
+        leagues.select(
+            'league_id',
+            'league_name',
+        ).lazy(),
+        left_on='league.id',
+        right_on='league_id',
+        how='left'
+    ).with_columns(
+        pl.when(
+            pl.col('name').is_null()
+        ).then(
+            pl.col('league_name') + '(' + pl.col('id').cast(str) + ')'
+        ).otherwise(
+            pl.col('name')
+        ).alias('name')
+    ).group_by('id').agg(
+        pl.col('name').mode().str.join(' | ').alias('name')
+    )
 
+    div = divisions.select(
+        pl.exclude('name', 'sport.id')
+    ).join(
+        division_names,
+        on='id',
+        how='left',
+    ).select(
+        pl.col('id').alias('division_id'),
+        pl.col('name').alias('division_name'),
+        pl.col('season'),
+        pl.col('league.id').alias('league_id'),
+        pl.col('active').alias('is_active'),
+        pl.col('link').alias('division_link')
+    )
 
+    div_seasons = div.select('division_id', 'season')
+    div = div.select(
+        pl.exclude('season')
+    ).unique()
+    return div, div_seasons
 
 
 
