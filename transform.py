@@ -1,8 +1,6 @@
 import polars as pl
-from polars import selectors as cs, LazyFrame
+from polars import selectors as cs
 import dataframely as dy
-from dataframely.exc import ValidationError
-from dataframely.filter_result import FilterResult, LazyFilterResult
 
 link_regex = r'/api/v\d(?:\.\d)?((?:/[a-zA-Z0-9]+)+)'
 class SportSchema(dy.Schema):

@@ -1,16 +1,17 @@
 from statsapi import get as api
 import polars as pl
 from requests import get as GET
-from typing import Callable, Iterable
+from typing import Callable
 from collections.abc import Iterable
 from time import time as now
 from time import sleep
 from tqdm import tqdm
 url = 'https://statsapi.mlb.com/api/v1/'
 
-def get(endpoint:str)-> pl.LazyFrame:
-
+def get(endpoint:str, params: dict['str'])-> pl.LazyFrame:
     return endpoints[endpoint]()
+
+
 def get_sports()-> pl.LazyFrame:
     """Retrieve a DataFrame of available sports from the statsapi.mlb.com"""
     try:
@@ -93,5 +94,6 @@ endpoints:dict[str, Callable[[],pl.LazyFrame]] = {
     'sports': get_sports,
     'leagues': get_leagues,
     'divisions': get_divisions,
-    'seasons': get_seasons
+    'seasons': get_seasons,
+    'teams': get_teams
 }
