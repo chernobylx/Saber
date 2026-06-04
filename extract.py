@@ -5,52 +5,84 @@ from collections.abc import Iterable
 from time import time as now
 from time import sleep
 from tqdm import tqdm
-url = 'https://statsapi.mlb.com/api/v1/'
+from yarl import URL
+from joblib import Memory
 
+cache = './.cache'
+memory = Memory(cache, verbose=0, compress=6)
+
+api = URL('https://statsapi.mlb.com/api/v1/')
 def get(endpoint:str)-> pl.LazyFrame:
     return endpoints[endpoint]()
 
 
-def get_sports()-> pl.LazyFrame:
-    """Retrieve a DataFrame of available sports from the statsapi.mlb.com"""
+@memory.cache
+def get_lazy_frame(endpoint:str = 'sports', query:dict = None, url:URL = api):
+    if query is None:
+        query = {}
+
+    url = url/endpoint % query
     try:
-        sports = GET(url+'/sports').json()['sports']
-        sports = pl.json_normalize(sports)
-        return sports.lazy()
-    except Exception:
-        raise
-
-
-def get_leagues()-> pl.LazyFrame:
-    """Retrieve a DataFrame of available leagues from statsapi.mlb.com"""
-    try:
-        leagues = GET(url+'leagues').json()['leagues']
-        leagues = pl.json_normalize(leagues)
-        return leagues.lazy()
-    except Exception:
-        raise
-
-def get_divisions(years: Iterable[int]=range(2026,1962,-1),
-                  sport_id: int=0)-> pl.LazyFrame:
-    """Retrieve a DataFrame of available divisions from statsapi.mlb.com"""
-    lfs: list[pl.LazyFrame] = []
-    fields = ['id','name','season','league.id','link','active']
-    for year in tqdm(years):
         t = now()
-        link = f'{url}/divisions?season={year}'
-        if sport_id > 0:
-            link += f'&sportId={sport_id}'
-        try:
-            divisions = GET(link).json()['divisions']
-            divisions = pl.json_normalize(divisions).select(fields)
-            lfs.append(divisions.lazy())
-        except Exception:
-            raise
+
+        response = GET(str(url))
+
         e = now()-t
         if e < 1:
             sleep(1-e)
 
-    return pl.concat(lfs)
+        if response.status_code != 200:
+            raise Exception(f"Request failed with status code {response.status_code}")
+        else:
+            json = response.json()[endpoint]
+            return pl.json_normalize(json).lazy()
+    except:
+        raise
+
+def get_sports(query:dict=None)-> pl.LazyFrame:
+    """Retrieve a DataFrame of available sports from the statsapi.mlb.com
+    To get all seasons pass a query without 'season'"""
+    if query is None:
+        query = {}
+    try:
+        short_a = get_lazy_frame('sports', {'sportId':15})
+        rook_a = get_lazy_frame('sports', {'sportId':5442})
+        rest = get_lazy_frame('sports', query=query)
+        return pl.concat([rest,short_a, rook_a], how = 'diagonal')
+    except:
+        raise
+
+def get_leagues(query:dict=None)-> pl.LazyFrame:
+    """Retrieve a DataFrame of available leagues from statsapi.mlb.com"""
+    if query is None:
+        query = {}
+    try:
+        return get_lazy_frame('leagues', query=query)
+    except:
+        raise
+
+def get_divisions(years: Iterable[int]=range(2026,1962,-1),
+                  sport_id: int=0)-> pl.LazyFrame:
+    """Retrieve a DataFrame of available divisions from statsapi.mlb.com
+    Earliest season with divisions is 1963"""
+    lfs: list[pl.LazyFrame] = []
+    if sport_id:
+        query = {'sportId': sport_id}
+    else:
+        query = {}
+    #fields = ['id','name','season','league.id','link','active']
+    for year in tqdm(years, desc='Divisions'):
+        try:
+            query['season'] = year
+            lfs.append(
+                get_lazy_frame(endpoint='divisions', query=query).lazy()
+            )
+        except:
+            raise
+
+
+
+    return pl.concat(lfs, how='diagonal')
 
 def get_seasons(years: Iterable[int]=range(2026,1893,-1),
                 sport_id: int=0)-> pl.LazyFrame:
@@ -59,41 +91,45 @@ def get_seasons(years: Iterable[int]=range(2026,1893,-1),
     (or iterable of years) from statsapi.mlb.com
     If sport_id<=0 then all leagues are returned
     """
-    link = (f'{url}/leagues?hydrate=schedule&seasons='+
-            f'{','.join([str(year)for year in years])}')
-    if sport_id>0:
-        link += f'&sportId={sport_id}'
+    query = {}
+    if sport_id:
+        query['sportId'] = sport_id
+
+    query['hydrate'] = 'schedule'
+    query['seasons'] = ','.join([str(year)for year in years])
+
+
     try:
-        seasons = GET(link).json()
-        seasons = pl.json_normalize(seasons['leagues'])
-        return seasons.lazy()
-    except Exception:
+        return get_lazy_frame('leagues', query)
+    except:
         raise
-def get_teams(years: Iterable[int]= range(2026,1870),
+
+def get_teams(years: Iterable[int]= range(2026,1870, -1),
               sport_id:int=0,
               use_fields: bool=False)-> pl.LazyFrame:
     lfs: list[pl.LazyFrame] = []
     fields = ['teams','id','name','link','season','venue','location',
               'teamCode','firstYearOfPlay','league','sport', 'division',
               'allStarStatus','parentOrgName','parentOrgId','active','locationName']
-    for year in tqdm(years):
-        t = now()
-        link = f'{url}/teams?season={year}'
-        if sport_id > 0:
-            link += f'&sportId={sport_id}'
-        elif use_fields:
-            link += f'&fields={",".join(fields)}'
-        try:
-            teams = GET(link).json()['teams']
-            teams = pl.json_normalize(teams)
-            lfs.append(teams.lazy())
-        except Exception:
-            raise
-        e = now()-t
-        if e < 1:
-            sleep(1-e)
 
-    return pl.concat(lfs)
+    query:dict[str,str|int] = {}
+    if sport_id:
+        query['sportId'] = sport_id
+    elif use_fields:
+        query['fields'] = ','.join(fields)
+
+
+    for year in tqdm(years, desc='Teams'):
+        query['season'] = year
+        try:
+            lfs.append(get_lazy_frame(endpoint='teams', query=query))
+        except:
+            raise
+
+
+    return pl.concat(lfs, how='diagonal')
+
+
 endpoints:dict[str, Callable[[],pl.LazyFrame]] = {
     'sports': get_sports,
     'leagues': get_leagues,
