@@ -33,7 +33,7 @@ def get_leagues()-> pl.LazyFrame:
 def get_divisions(years: Iterable[int]=range(2026,1962,-1), sport_id: int=0)-> pl.LazyFrame:
     """Retrieve a DataFrame of available divisions from statsapi.mlb.com"""
     lfs: list[pl.LazyFrame] = []
-    fields = ['id','name','season','sport.id','league.id','link','active']
+    fields = ['id','name','season','league.id','link','active']
     for year in tqdm(years):
         t = now()
         link = f'{url}/divisions?season={year}'
