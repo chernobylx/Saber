@@ -1,4 +1,5 @@
 import polars as pl
+from polars import selectors as cs
 import dataframely as dy
 from dataframely.exc import ValidationError
 from dataframely.filter_result import FilterResult, LazyFilterResult
@@ -28,13 +29,13 @@ class SeasonSchema(dy.Schema):
     n_games = dy.UInt32(nullable=False)
     n_teams = dy.UInt32(nullable=False)
     has_divisions = dy.Bool(nullable=False)
+    has_split_season = dy.Bool(nullable=False)
     n_wildcard_teams = dy.UInt32(nullable=False)
-    pre_season_start = dy.Date(nullable=False)
-    pre_season_end = dy.Date(nullable=False)
-    season_start = dy.Date(nullable=False)
-    season_end = dy.Date(nullable=False)
+    pre_start = dy.Date(nullable=False)
+    pre_end = dy.Date(nullable=False)
     spring_start = dy.Date(nullable=True)
     spring_end = dy.Date(nullable=True)
+    season_start = dy.Date(nullable=False)
     regular_start = dy.Date(nullable=False)
     first_half_end = dy.Date(nullable=True)
     all_star_game = dy.Date(nullable=True)
@@ -42,34 +43,25 @@ class SeasonSchema(dy.Schema):
     regular_end = dy.Date(nullable=False)
     post_start = dy.Date(nullable=True)
     post_end = dy.Date(nullable=True)
+    season_end = dy.Date(nullable=False)
     off_start = dy.Date(nullable=False)
-    off_end = dy.Date(nullable=False)
+    off_end = dy.Date(nullable=True)
 
     @dy.rule()
     def general_causality(cls)->pl.Expr:
-        expr = pl.col('pre_season_start') < pl.col('pre_season_end')
-        expr &= pl.col('pre_season_end') <= pl.col('season_start')
-        expr &= pl.col('season_start') < pl.col('season_end')
-        expr &= pl.col('season_start') <= pl.col('regular_start')
-        expr &= pl.col('regular_start') < pl.col('regular_end')
-        expr &= pl.col('regular_end') <= pl.col('season_end')
-        expr &= pl.col('season_end') <= pl.col('off_start')
-        expr &= pl.col('off_start') < pl.col('off_end')
+        expr = pl.col('pre_start') <= pl.col('pre_end')
+        expr = expr & (pl.col('pre_end') <= pl.col('season_start'))
+        expr = expr & (pl.col('season_start') < pl.col('season_end'))
+        expr = expr & (pl.col('season_start') <= pl.col('regular_start'))
+        expr = expr & (pl.col('regular_start') < pl.col('regular_end'))
+        expr = expr & (pl.col('regular_end') <= pl.col('season_end'))
+        #negro league off season starts after regular season end not season end
+        expr = expr & (pl.col('regular_end') <= pl.col('off_start'))
+        expr &= (pl.col('off_start') < pl.col('off_end')) | pl.col('off_end').is_null()
+        expr &= (pl.col('first_half_end')<=pl.col('second_half_start'))
         return expr
 
-    @dy.rule()
-    def all_star_causality(cls):
-        expr = pl.col('first_half_end') < pl.col('all_star_game') < pl.col('second_half_start')
-        expr |= (
-                    (pl.col('all_star_game').is_null() &
-                    (pl.col('first_half_start') < pl.col('second_half_start')))
-                )
-        expr |= pl.all_horizontal(
-                    pl.col('all_star_game').is_null(),
-                    pl.col('first_half_start').is_null(),
-                    pl.col('second_half_start').is_null()
-                )
-        return expr
+
 
 class SportCollection(dy.Collection):
     sports: dy.LazyFrame[SportSchema]
@@ -135,6 +127,83 @@ def transform_leagues(df: pl.LazyFrame)-> pl.LazyFrame:
     )
 
     return df
+
+def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame[SeasonSchema]:
+    lf = lf.select(
+        pl.col('id').alias('league_id'),
+        pl.col('season'),
+        pl.col('numGames').alias('n_games'),
+        pl.col('numTeams').alias('n_teams'),
+        pl.col('divisionsInUse').alias('has_divisions'),
+        pl.col('hasSplitSeason').alias('has_split_season'),
+        pl.col('numWildcardTeams').alias('n_wildcard_teams'),
+        pl.col('seasonDateInfo.preSeasonStartDate').alias('pre_start'),
+        pl.col('seasonDateInfo.preSeasonEndDate').alias('pre_end'),
+        pl.col('seasonDateInfo.seasonStartDate').alias('season_start'),
+        pl.col('seasonDateInfo.springStartDate').alias('spring_start'),
+        pl.col('seasonDateInfo.springEndDate').alias('spring_end'),
+        pl.col('seasonDateInfo.regularSeasonStartDate').alias('regular_start'),
+        pl.col('seasonDateInfo.lastDate1stHalf').alias('first_half_end'),
+        pl.col('seasonDateInfo.allStarDate').alias('all_star_game'),
+        pl.col('seasonDateInfo.firstDate2ndHalf').alias('second_half_start'),
+        pl.col('seasonDateInfo.regularSeasonEndDate').alias('regular_end'),
+        pl.col('seasonDateInfo.postSeasonStartDate').alias('post_start'),
+        pl.col('seasonDateInfo.postSeasonEndDate').alias('post_end'),
+        pl.col('seasonDateInfo.seasonEndDate').alias('season_end'),
+        pl.col('seasonDateInfo.offseasonStartDate').alias('off_start'),
+        pl.col('seasonDateInfo.offSeasonEndDate').alias('off_end')
+    ).with_columns(
+        pl.col('n_wildcard_teams').fill_null(0),
+        pl.col('has_split_season').fill_null(False),
+    ).collect().filter(
+        ~pl.col('n_games').is_null() & ~pl.col('n_teams').is_null()
+    ).with_columns(
+        cs.matches('_(start|end)').cast(pl.datatypes.Date),
+        pl.col('all_star_game').cast(pl.datatypes.Date)
+    ).with_columns(
+        pl.when(
+            pl.col('pre_end').is_null()
+        ).then(
+            pl.col('season_start')
+        ).otherwise(
+            pl.col('pre_end')
+        ).alias('pre_end'),
+
+        pl.when(
+            pl.col('off_start').is_null()
+        ).then(
+            pl.col('season_end') + pl.duration(days=1)
+        ).otherwise(
+            pl.col('off_start')
+        ).alias('off_start')
+    ).with_columns(
+        pl.when(
+            (pl.col('regular_end') > pl.col('season_end'))
+        ).then(
+            pl.col('season_end')
+        ).otherwise(
+            pl.col('regular_end')
+        ).alias('regular_end'),
+
+        pl.when(
+            (pl.col('first_half_end') > pl.col('second_half_start'))
+        ).then(
+            pl.col('second_half_start') - pl.duration(days=1)
+        ).otherwise(
+            pl.col('first_half_end')
+        ).alias('first_half_end'),
+
+        pl.when(
+            pl.col('off_end') < pl.col('off_start')
+        ).then(
+            None
+        ).otherwise(
+            pl.col('off_end')
+        ).alias('off_end')
+    )
+
+    return lf
+
 
 
 
