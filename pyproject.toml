@@ -6,3 +6,11 @@ select = ["E", "F", "ANN"]
 # Enforce type hints for 'self' and 'cls' (optional, turn off if too verbose)
 allow-star-arg-any = false
 suppress-dummy-args = false
+
+[tool.mypy]
+files = ["extract.py", "transform.py"]
+follow_imports = "silent"
+
+[[tool.mypy.overrides]]
+module = ["dataframely.*", "tqdm.*"]
+ignore_missing_imports = true
