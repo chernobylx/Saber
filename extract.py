@@ -65,7 +65,30 @@ def get_seasons(years: Iterable[int]=range(2026,1893,-1), sport_id: int=0)-> pl.
         return seasons.lazy()
     except Exception:
         raise
+def get_teams(years: Iterable[int]= range(2026,1870),
+              sport_id:int=0,
+              use_fields: bool=False)-> pl.LazyFrame:
+    lfs: list[pl.LazyFrame] = []
+    fields = ['teams','id','name','link','season','venue','location','teamCode','firstYearOfPlay','league','sport',
+              'division','allStarStatus','parentOrgName','parentOrgId','active','locationName']
+    for year in tqdm(years):
+        t = now()
+        link = f'{url}/teams?season={year}'
+        if sport_id > 0:
+            link += f'&sportId={sport_id}'
+        elif use_fields:
+            link += f'&fields={",".join(fields)}'
+        try:
+            teams = GET(link).json()['teams']
+            teams = pl.json_normalize(teams)
+            lfs.append(teams.lazy())
+        except Exception:
+            raise
+        e = now()-t
+        if e < 1:
+            sleep(1-e)
 
+    return pl.concat(lfs)
 endpoints:dict[str, Callable[[],pl.LazyFrame]] = {
     'sports': get_sports,
     'leagues': get_leagues,
