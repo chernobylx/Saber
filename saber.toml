@@ -1,0 +1,8 @@
+[tool.ruff.lint]
+# Enable Pyflakes (F), Eradicate/Flake8 rules, and Flake8-Annotations (ANN)
+select = ["E", "F", "ANN"]
+
+[tool.ruff.lint.flake8-annotations]
+# Enforce type hints for 'self' and 'cls' (optional, turn off if too verbose)
+allow-star-arg-any = false
+suppress-dummy-args = false
