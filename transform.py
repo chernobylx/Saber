@@ -13,7 +13,7 @@ class SportSchema(dy.Schema):
 
 class LeagueSchema(dy.Schema):
     league_id = dy.UInt32(nullable=False, primary_key=True)
-    sport_id = dy.UInt32(nullable=False,primary_key=True)
+    #sport_id = dy.UInt32(nullable=False,primary_key=True)
     league_name = dy.String(nullable=False, unique=False)
     league_abbr = dy.String(nullable=False, unique=True)
     last_season = dy.UInt32(nullable=False)
@@ -21,9 +21,12 @@ class LeagueSchema(dy.Schema):
     sort_order = dy.UInt32(nullable=False, unique=True)
     league_link = dy.String(nullable=False, unique=True, regex=link_regex)
 
+
+
 class SeasonSchema(dy.Schema):
     league_id = dy.UInt32(nullable=False, primary_key=True)
     season = dy.UInt32(nullable=False, primary_key=True)
+    sport_id = dy.UInt32(nullable=False, primary_key=True)
     n_games = dy.UInt32(nullable=False)
     n_teams = dy.UInt32(nullable=False)
     has_divisions = dy.Bool(nullable=False)
@@ -59,24 +62,31 @@ class SeasonSchema(dy.Schema):
         expr &= (pl.col('first_half_end')<=pl.col('second_half_start'))
         return expr
 
+
+
 class DivisionSchema(dy.Schema):
-    division_id = dy.Int64(nullable=False, primary_key=True)
+    division_id = dy.UInt32(nullable=False, primary_key=True)
     division_name = dy.String(nullable=False, unique=True)
-    league_id = dy.Int64(nullable=False)
+    league_id = dy.UInt32(nullable=False)
     is_active = dy.Bool(nullable=False)
     division_link = dy.String(nullable=False, regex=link_regex, unique=True)
 
 class DivisionSeasonsSchema(dy.Schema):
-    division_id = dy.Int64(nullable=False, primary_key=True)
-    season = dy.Int64(nullable=False, primary_key=True)
+    division_id = dy.UInt32(nullable=False, primary_key=True)
+    season = dy.UInt32(nullable=False, primary_key=True)
 
-class SportCollection(dy.Collection):
+class SportsSeasons(dy.Collection):
     sports: dy.LazyFrame[SportSchema]
-    leagues: dy.LazyFrame[LeagueSchema]
+    seasons: dy.LazyFrame[SeasonSchema]
 
     @dy.filter()
-    def leagues_foreign_key(self)->pl.LazyFrame:
-        return self.sports.select('sport_id')
+    def seasons_sports(self)->pl.LazyFrame:
+        #every season must reference a valid sport and every sport must be referenced by at least one season
+        return self.sports.join(
+            self.seasons,
+            on='sport_id',
+            how='inner'
+        ).select('sport_id').collect().unique().lazy()
 
 
 
@@ -105,15 +115,15 @@ def transform_leagues(df: pl.LazyFrame)-> pl.LazyFrame:
             pl.col('abbreviation')
         ),
 
-        pl.when(
-            pl.col('sport.id').is_null() & pl.col('active')
-        ).then(
-            1
-        ).otherwise(
-            pl.col('sport.id')
-        ).alias('sport.id')
-    ).filter(
-        ~pl.col('sport.id').is_null()
+        #pl.when(
+        #    pl.col('sport.id').is_null() & pl.col('active')
+        #).then(
+        #    1
+        #).otherwise(
+        #    pl.col('sport.id')
+        #).alias('sport.id')
+    #).filter(
+    #    ~pl.col('sport.id').is_null()
     ).with_columns(
         pl.when(
             pl.col('name').str.contains('CONCEBE')
@@ -124,7 +134,7 @@ def transform_leagues(df: pl.LazyFrame)-> pl.LazyFrame:
         )
     ).select(
         pl.col('id').alias('league_id'),
-        pl.col('sport.id').alias('sport_id'),
+        #pl.col('sport.id').alias('sport_id'),
         pl.col('name').alias('league_name'),
         pl.col('abbreviation').alias('league_abbr'),
         pl.col('season').alias('last_season'),
@@ -139,6 +149,7 @@ def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame:
     lf = lf.select(
         pl.col('id').alias('league_id'),
         pl.col('season'),
+        pl.col('sport.id').alias('sport_id'),
         pl.col('numGames').alias('n_games'),
         pl.col('numTeams').alias('n_teams'),
         pl.col('divisionsInUse').alias('has_divisions'),
