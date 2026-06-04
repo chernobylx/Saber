@@ -10,6 +10,8 @@ suppress-dummy-args = false
 [tool.mypy]
 files = ["extract.py", "transform.py"]
 follow_imports = "silent"
+python_executable = "C:/Users/theru/anaconda3/envs/saber/python.exe"
+mypy_path = "C:/Users/theru/anaconda3/envs/saber/Lib/site-packages"
 
 [[tool.mypy.overrides]]
 module = ["dataframely.*", "tqdm.*"]
