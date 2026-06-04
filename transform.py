@@ -135,7 +135,7 @@ def transform_leagues(df: pl.LazyFrame)-> pl.LazyFrame:
 
     return df
 
-def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame[SeasonSchema]:
+def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame:
     lf = lf.select(
         pl.col('id').alias('league_id'),
         pl.col('season'),
@@ -207,11 +207,12 @@ def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame[SeasonSchema]:
         ).otherwise(
             pl.col('off_end')
         ).alias('off_end')
-    )
+    ).lazy()
 
     return lf
 
-def transform_divisions(divisions: pl.LazyFrame, leagues:pl.LazyFrame)-> tuple[pl.LazyFrame, pl.LazyFrame]:
+def transform_divisions(divisions: pl.LazyFrame,
+                        leagues:pl.LazyFrame)-> tuple[pl.LazyFrame, pl.LazyFrame]:
     division_names = divisions.join(
         leagues.select(
             'league_id',

@@ -1,4 +1,3 @@
-from statsapi import get as api
 import polars as pl
 from requests import get as GET
 from typing import Callable
@@ -8,14 +7,14 @@ from time import sleep
 from tqdm import tqdm
 url = 'https://statsapi.mlb.com/api/v1/'
 
-def get(endpoint:str, params: dict['str'])-> pl.LazyFrame:
+def get(endpoint:str)-> pl.LazyFrame:
     return endpoints[endpoint]()
 
 
 def get_sports()-> pl.LazyFrame:
     """Retrieve a DataFrame of available sports from the statsapi.mlb.com"""
     try:
-        sports = api('sports')['sports']
+        sports = GET(url+'/sports').json()['sports']
         sports = pl.json_normalize(sports)
         return sports.lazy()
     except Exception:
@@ -31,7 +30,8 @@ def get_leagues()-> pl.LazyFrame:
     except Exception:
         raise
 
-def get_divisions(years: Iterable[int]=range(2026,1962,-1), sport_id: int=0)-> pl.LazyFrame:
+def get_divisions(years: Iterable[int]=range(2026,1962,-1),
+                  sport_id: int=0)-> pl.LazyFrame:
     """Retrieve a DataFrame of available divisions from statsapi.mlb.com"""
     lfs: list[pl.LazyFrame] = []
     fields = ['id','name','season','league.id','link','active']
@@ -52,12 +52,15 @@ def get_divisions(years: Iterable[int]=range(2026,1962,-1), sport_id: int=0)-> p
 
     return pl.concat(lfs)
 
-def get_seasons(years: Iterable[int]=range(2026,1893,-1), sport_id: int=0)-> pl.LazyFrame:
+def get_seasons(years: Iterable[int]=range(2026,1893,-1),
+                sport_id: int=0)-> pl.LazyFrame:
     """
-    Retrieve season parameters for each league active in a given sport and year (or iterable of years) from statsapi.mlb.com
+    Retrieve season parameters for each league active in a given sport and year
+    (or iterable of years) from statsapi.mlb.com
     If sport_id<=0 then all leagues are returned
     """
-    link = f'{url}/leagues?hydrate=schedule&seasons={','.join([str(year)for year in years])}'
+    link = (f'{url}/leagues?hydrate=schedule&seasons='+
+            f'{','.join([str(year)for year in years])}')
     if sport_id>0:
         link += f'&sportId={sport_id}'
     try:
@@ -70,8 +73,9 @@ def get_teams(years: Iterable[int]= range(2026,1870),
               sport_id:int=0,
               use_fields: bool=False)-> pl.LazyFrame:
     lfs: list[pl.LazyFrame] = []
-    fields = ['teams','id','name','link','season','venue','location','teamCode','firstYearOfPlay','league','sport',
-              'division','allStarStatus','parentOrgName','parentOrgId','active','locationName']
+    fields = ['teams','id','name','link','season','venue','location',
+              'teamCode','firstYearOfPlay','league','sport', 'division',
+              'allStarStatus','parentOrgName','parentOrgId','active','locationName']
     for year in tqdm(years):
         t = now()
         link = f'{url}/teams?season={year}'
