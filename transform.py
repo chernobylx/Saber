@@ -1,5 +1,5 @@
 import polars as pl
-from polars import selectors as cs, LazyFrame
+from polars import selectors as cs
 import dataframely as dy
 
 link_regex = r'/api/v\d(?:\.\d)?((?:/[a-zA-Z0-9]+)+)'
