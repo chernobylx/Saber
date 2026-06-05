@@ -114,6 +114,11 @@ class LeagueCollection(dy.Collection):
     team_seasons: dy.LazyFrame[TeamsBySeasonSchema]
     seasons: dy.LazyFrame[SeasonSchema]
 
+    @dy.filter()
+    def enforce_foreign_keys(self)->pl.LazyFrame:
+        #every reference to league_id must be valid
+        return self.leagues.select('league_id')
+
 def transform_sports(df: pl.LazyFrame) -> pl.LazyFrame:
     #rename columns to match schema
     df = df.select(
