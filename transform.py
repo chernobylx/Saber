@@ -88,6 +88,7 @@ class SportsSeasons(dy.Collection):
             how='inner'
         ).select('sport_id').collect().unique().lazy()
 
+
 class TeamSchema(dy.Schema):
     team_id = dy.UInt32(nullable=False, primary_key=True)
     team_link = dy.String(nullable=False, regex=link_regex, unique=True)
@@ -106,6 +107,12 @@ class TeamsBySeasonSchema(dy.Schema):
     spring_league_id = dy.UInt32(nullable=True)
     spring_venue_id = dy.UInt32(nullable=True)
     parent_org_id = dy.UInt32(nullable=True)
+
+class LeagueCollection(dy.Collection):
+    leagues: dy.LazyFrame[LeagueSchema]
+    divisions: dy.LazyFrame[DivisionSchema]
+    team_seasons: dy.LazyFrame[TeamsBySeasonSchema]
+    seasons: dy.LazyFrame[SeasonSchema]
 
 def transform_sports(df: pl.LazyFrame) -> pl.LazyFrame:
     #rename columns to match schema
