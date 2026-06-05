@@ -81,7 +81,8 @@ class SportsSeasons(dy.Collection):
 
     @dy.filter()
     def seasons_sports(self)->pl.LazyFrame:
-        #every season must reference a valid sport and every sport must be referenced by at least one season
+        #every season must reference a valid sport and every sport must be referenced by
+        # at least one season
         return self.sports.join(
             self.seasons,
             on='sport_id',

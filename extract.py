@@ -17,7 +17,8 @@ def get(endpoint:str)-> pl.LazyFrame:
 
 
 @memory.cache
-def get_lazy_frame(endpoint:str = 'sports', query:dict = None, url:URL = api):
+def get_lazy_frame(endpoint:str = 'sports',
+                   query:dict = None, url:URL = api)-> pl.LazyFrame:
     if query is None:
         query = {}
 
