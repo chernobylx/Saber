@@ -1,5 +1,5 @@
 import polars as pl
-from polars import selectors as cs
+from polars import selectors as cs, LazyFrame
 import dataframely as dy
 
 link_regex = r'/api/v\d(?:\.\d)?((?:/[a-zA-Z0-9]+)+)'
@@ -88,9 +88,24 @@ class SportsSeasons(dy.Collection):
             how='inner'
         ).select('sport_id').collect().unique().lazy()
 
+class TeamSchema(dy.Schema):
+    team_id = dy.UInt32(nullable=False, primary_key=True)
+    team_link = dy.String(nullable=False, regex=link_regex, unique=True)
+    is_active = dy.Bool(nullable=False)
 
-
-
+class TeamsBySeasonSchema(dy.Schema):
+    team_id = dy.UInt32(nullable=False, primary_key=True)
+    season = dy.UInt32(nullable=False, primary_key=True)
+    team_name = dy.String(nullable=False)
+    team_code = dy.String(nullable=False)
+    league_id = dy.UInt32(nullable=True)
+    sport_id = dy.UInt32(nullable=False)
+    division_id = dy.UInt32(nullable=True)
+    location_name = dy.String(nullable=True)
+    venue_id = dy.UInt32(nullable=True)
+    spring_league_id = dy.UInt32(nullable=True)
+    spring_venue_id = dy.UInt32(nullable=True)
+    parent_org_id = dy.UInt32(nullable=True)
 
 def transform_sports(df: pl.LazyFrame) -> pl.LazyFrame:
     #rename columns to match schema
@@ -264,7 +279,56 @@ def transform_divisions(divisions: pl.LazyFrame,
         pl.exclude('season')
     ).unique()
     return div, div_seasons
+def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
+    lf = lf.select(
+        pl.col('id').alias('team_id'),
+        pl.col('season'),
+        pl.col('name').alias('team_name'),
+        pl.col('teamCode').alias('team_code'),
+        pl.col('locationName').alias('location_name'),
+        pl.col('league.id').alias('league_id'),
+        pl.col('sport.id').alias('sport_id'),
+        pl.col('division.id').alias('division_id'),
+        pl.col('venue.id').alias('venue_id'),
+        pl.col('springLeague.id').alias('spring_league_id'),
+        pl.col('springVenue.id').alias('spring_venue_id'),
+        pl.col('link').alias('team_link'),
+        pl.col('active').alias('is_active'),
+        pl.col('parentOrgId').alias('parent_org_id'),
+    )
 
+    name_modes = lf.group_by(
+        'team_id'
+    ).agg(
+        pl.col('location_name').drop_nulls().mode().alias('location_mode'),
+    ).with_columns(
+        pl.col('location_mode').list.first(),
+    )
 
+    lf = lf.join(
+        name_modes,
+        on='team_id',
+        how='left',
+    ).with_columns(
+        pl.when(
+            pl.col('location_name').is_null()
+        ).then(
+            pl.col('location_mode')
+        ).otherwise(
+            pl.col('location_name')
+        ).alias('location_name')
+    ).select(
+        cs.exclude('location_mode')
+    )
+
+    teams = lf.select(
+        ['team_id', 'is_active', 'team_link']
+    ).collect().unique().lazy()
+
+    teams_seasons = lf.select(
+        cs.exclude(['team_link', 'is_active'])
+    )
+
+    return teams, teams_seasons
 
 
