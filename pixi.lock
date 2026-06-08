@@ -65,6 +65,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/multipledispatch-0.6.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/munkres-1.1.4-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/narwhals-2.22.1-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/npx-0.1.1-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/opentelemetry-api-1.42.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.2-pyhc364b38_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/panel-1.9.3-pyhd8ed1ab_0.conda
@@ -925,6 +926,16 @@ packages:
   license_family: MIT
   size: 285532
   timestamp: 1780672242196
+- conda: https://conda.anaconda.org/conda-forge/noarch/npx-0.1.1-pyhd8ed1ab_0.tar.bz2
+  sha256: 157b860b552050a90bd31594d01195e4a998c26a7b16fc130f00362104990a3c
+  md5: 3c7ba2a1c4043e043ce1e605276fc6e1
+  depends:
+  - numpy >=1.20.0
+  - python >=3
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 13343
+  timestamp: 1646769462891
 - conda: https://conda.anaconda.org/conda-forge/noarch/opentelemetry-api-1.42.1-pyhd8ed1ab_0.conda
   sha256: 4907a094c778225dcd807eaae92eefcca6471198a93f221cda4135e7c36cac19
   md5: 106a605359e90de93fa68956e8bf4c11
