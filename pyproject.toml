@@ -1,0 +1,5 @@
+[tool.marimo.language_servers.pylsp]
+enabled = true
+
+[tool.marimo.language_servers.ty]
+enabled = true
