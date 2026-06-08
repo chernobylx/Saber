@@ -100,7 +100,7 @@ class TeamsBySeasonSchema(dy.Schema):
     season = dy.UInt32(nullable=False, primary_key=True)
     team_name = dy.String(nullable=False)
     team_code = dy.String(nullable=False)
-    league_id = dy.Int32(nullable=False, primary_key=True)
+    league_id = dy.UInt32(nullable=False, primary_key=True)#league_id = 0 -> unaffiliated team
     sport_id = dy.UInt32(nullable=False)
     division_id = dy.UInt32(nullable=True)
     location_name = dy.String(nullable=True)
@@ -118,7 +118,12 @@ class LeagueCollection(dy.Collection):
     @dy.filter()
     def enforce_foreign_keys(self)->pl.LazyFrame:
         #every reference to league_id must be valid
-        return self.leagues.select('league_id')
+        
+        #league_id = 0 represents unaffiliated teams
+        return pl.concat([
+            self.leagues.select('league_id'),
+            pl.LazyFrame({'league_id': [0]}, schema={'league_id': pl.UInt32})
+        ])
 
 def transform_sports(df: pl.LazyFrame) -> pl.LazyFrame:
     #rename columns to match schema

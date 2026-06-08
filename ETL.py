@@ -8,8 +8,9 @@ app = marimo.App()
 def _():
     import polars as pl
     from extract import endpoints, get
-    from transform import (transform_sports, transform_leagues, transform_seasons,
-                           transform_divisions, transform_teams,TeamsBySeasonSchema)
+    from transform import (transform_sports, transform_leagues, transform_seasons,                   transform_divisions, transform_teams,TeamsBySeasonSchema)
+    import altair as alt
+    alt.data_transformers.enable("vegafusion")
     from transform import (DivisionSchema, DivisionSeasonsSchema,SportSchema, LeagueSchema,
                            SeasonSchema, TeamSchema)
     from transform import SportsSeasons, LeagueCollection
@@ -30,7 +31,6 @@ def _():
         TeamsBySeasonSchema,
         endpoints,
         get,
-        mo,
         pl,
         transform_divisions,
         transform_leagues,
@@ -114,31 +114,14 @@ def _(
 
 
 @app.cell
-def _():
-    return
-
-
-@app.cell
 def _(TeamSchema, TeamsBySeasonSchema, pl, teams, transform_teams):
     teams_1, team_seasons = transform_teams(teams)
     teams_1 = TeamSchema.validate(teams_1, cast=True).lazy()
     team_seasons = team_seasons.with_columns(
-        pl.col.league_id.fill_null(-1)
+        pl.col.league_id.fill_null(0)
     )
     team_seasons = TeamsBySeasonSchema.validate(team_seasons, cast=True).lazy()
     return (team_seasons,)
-
-
-@app.cell
-def _(team_seasons):
-    team_seasons.collect()
-    return
-
-
-@app.cell
-def _(mo, team_seasons):
-    mo.ui.dataframe(team_seasons.collect().to_pandas(), page_size=20)
-    return
 
 
 @app.cell
