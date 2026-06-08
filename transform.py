@@ -67,7 +67,7 @@ class SeasonSchema(dy.Schema):
 class DivisionSchema(dy.Schema):
     division_id = dy.UInt32(nullable=False, primary_key=True)
     division_name = dy.String(nullable=False, unique=True)
-    league_id = dy.UInt32(nullable=False)
+    league_id = dy.UInt32(nullable=False, primary_key=True)
     is_active = dy.Bool(nullable=False)
     division_link = dy.String(nullable=False, regex=link_regex, unique=True)
 
@@ -87,7 +87,7 @@ class SportsSeasons(dy.Collection):
             self.seasons,
             on='sport_id',
             how='inner'
-        ).select('sport_id').collect().unique().lazy()
+        ).select('sport_id').unique().lazy()
 
 
 class TeamSchema(dy.Schema):
@@ -100,7 +100,7 @@ class TeamsBySeasonSchema(dy.Schema):
     season = dy.UInt32(nullable=False, primary_key=True)
     team_name = dy.String(nullable=False)
     team_code = dy.String(nullable=False)
-    league_id = dy.UInt32(nullable=True)
+    league_id = dy.Int32(nullable=False, primary_key=True)
     sport_id = dy.UInt32(nullable=False)
     division_id = dy.UInt32(nullable=True)
     location_name = dy.String(nullable=True)
@@ -201,7 +201,7 @@ def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame:
     ).with_columns(
         pl.col('n_wildcard_teams').fill_null(0),
         pl.col('has_split_season').fill_null(False),
-    ).collect().filter(
+    ).filter(
         ~pl.col('n_games').is_null() & ~pl.col('n_teams').is_null()
     ).with_columns(
         cs.matches('_(start|end)').cast(pl.datatypes.Date),
@@ -336,7 +336,7 @@ def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
 
     teams = lf.select(
         ['team_id', 'is_active', 'team_link']
-    ).collect().unique().lazy()
+    ).unique()
 
     teams_seasons = lf.select(
         cs.exclude(['team_link', 'is_active'])
