@@ -246,6 +246,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc14_runtime-14.51.36231-h1b9f54f_38.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vcomp14-14.51.36231-h1b9f54f_38.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vegafusion-2.0.3-py313h60a14f1_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/vegafusion-python-embed-1.6.9-py313he817f3f_3.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/vl-convert-python-2.0.0rc1-py313h1dc5b7c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vs2015_runtime-14.51.36231-h84cd919_38.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/websockets-16.0-py313h5fd188c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/xorg-libxau-1.0.12-hba3369d_1.conda
@@ -3417,6 +3419,33 @@ packages:
   license_family: BSD
   size: 9828819
   timestamp: 1773535633540
+- conda: https://conda.anaconda.org/conda-forge/win-64/vegafusion-python-embed-1.6.9-py313he817f3f_3.conda
+  sha256: d32035c037ffc67e039cd3a47b52f410548c5c9a03d5eee19fab8031a1acdca9
+  md5: 07e2d693d87d8fc6331eb0c536e0a172
+  depends:
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - ucrt >=10.0.20348.0
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 14697989
+  timestamp: 1761582364740
+- conda: https://conda.anaconda.org/conda-forge/win-64/vl-convert-python-2.0.0rc1-py313h1dc5b7c_0.conda
+  sha256: 6930f983683032ca765a9c6bfbfcfbcd0a1df3ae92d99bbf6694ba917199b25e
+  md5: 6c151e5371ffc441c3f3b3e5de2c0553
+  depends:
+  - libsqlite >=3.51.2,<4.0a0
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - ucrt >=10.0.20348.0
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  license: BSD-3-Clause
+  license_family: BSD
+  size: 28279450
+  timestamp: 1771116563259
 - conda: https://conda.anaconda.org/conda-forge/win-64/vs2015_runtime-14.51.36231-h84cd919_38.conda
   sha256: c4f38268563dc6b8322b0191481e5d20002fc6e37b076c15e0b955a553c8b4a0
   md5: 6033851d921b6c33f1c3018205fcba6a
