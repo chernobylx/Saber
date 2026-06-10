@@ -1,10 +1,10 @@
 import marimo
 
 __generated_with = "0.23.9"
-app = marimo.App(width="full")
+app = marimo.App(width="columns")
 
 
-@app.cell
+@app.cell(column=0)
 def _():
     import polars as pl
     from extract import endpoints, get
@@ -14,9 +14,10 @@ def _():
                            SeasonSchema, TeamSchema)
     from transform import SportsSeasons, LeagueCollection
     from pathlib import Path
-
+    import duckdb
     import marimo as mo
 
+    db = duckdb.connect("data/statsapi/statsapi.duckdb")
     return (
         DivisionSchema,
         DivisionSeasonsSchema,
@@ -28,8 +29,10 @@ def _():
         SportsSeasons,
         TeamSchema,
         TeamsBySeasonSchema,
+        db,
         endpoints,
         get,
+        mo,
         pl,
         transform_divisions,
         transform_leagues,
@@ -50,7 +53,7 @@ def _(Path, endpoints, get):
     #build file paths
     paths = [data/(table+'.parquet') for table in tables]
     #download missing tables
-    for table, path in zip(tables, paths):
+    for table, path in zip(tables, paths, strict=True):
         if not path.exists():
             get(table).collect().write_parquet(path)
     return (data,)
@@ -104,13 +107,26 @@ def _(
         'leagues': leagues,
         'divisions': divisions,
         'seasons': SC.seasons,
-        'teams': teams,
         'team_seasons': team_seasons
     })
     return
 
 
 @app.cell
+def _(Path, db):
+    #create tables from the versioned schema (see sql/schema.sql)
+    db.execute(Path('sql/schema.sql').read_text())
+    db.sql("SHOW ALL TABLES")
+    return
+
+
+@app.cell
+def _(SeasonSchema):
+    SeasonSchema
+    return
+
+
+@app.cell(column=1)
 def _():
     return
 
