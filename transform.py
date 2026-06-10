@@ -118,7 +118,13 @@ class LeagueCollection(dy.Collection):
     @dy.filter()
     def enforce_foreign_keys(self)->pl.LazyFrame:
         #every reference to league_id must be valid
-        return self.leagues.select('league_id')
+
+        #add -1 so that unaffillieated teams are not removed
+        return pl.concat( [
+            self.leagues.select('league_id').cast(pl.Int64),
+            pl.LazyFrame(
+                {'league_id': [-1]}
+            )])
 
 def transform_sports(df: pl.LazyFrame) -> pl.LazyFrame:
     #rename columns to match schema
