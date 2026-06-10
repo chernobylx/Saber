@@ -11,7 +11,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/altair-6.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-doc-0.0.4-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/anthropic-0.107.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/anthropic-0.109.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.13.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/attrs-26.1.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bokeh-3.9.0-pyhd8ed1ab_0.conda
@@ -35,7 +35,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/exceptiongroup-1.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/filelock-3.29.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/fsspec-2026.4.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/genai-prices-0.0.65-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/genai-prices-0.0.66-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/griffelib-2.0.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.16.0-pyhcf101f3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.3.0-pyhcf101f3_0.conda
@@ -58,7 +58,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jsonschema-4.26.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jsonschema-specifications-2025.9.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/linkify-it-py-2.1.0-pyhcf101f3_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/logfire-api-4.35.0-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/logfire-api-4.36.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-3.10.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-it-py-4.2.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/mdit-py-plugins-0.6.1-pyhd8ed1ab_0.conda
@@ -308,9 +308,9 @@ packages:
   license_family: MIT
   size: 18074
   timestamp: 1733247158254
-- conda: https://conda.anaconda.org/conda-forge/noarch/anthropic-0.107.1-pyhd8ed1ab_0.conda
-  sha256: a9e85aad95b742115215a1dfd79ec3295319aeb9ecdaf1714fc98253a0867c2b
-  md5: f88bd0941489e9933b9fbfd3eee928e2
+- conda: https://conda.anaconda.org/conda-forge/noarch/anthropic-0.109.1-pyhd8ed1ab_0.conda
+  sha256: 984ac8f5db628ab3fc5ff78f5c731cdb7dbbf7d08ba4a9d3cd2909ef29e74c23
+  md5: 11ed2099eff7f998d670ed3e187047f0
   depends:
   - anyio >=3.5.0,<5
   - cached-property
@@ -325,8 +325,9 @@ packages:
   - typing-extensions >=4.7,<5
   - typing_extensions >=4.14,<5
   license: MIT
-  size: 350984
-  timestamp: 1780867188185
+  license_family: MIT
+  size: 389158
+  timestamp: 1781068213045
 - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.13.0-pyhcf101f3_0.conda
   sha256: f09aed24661cd45ba54a43772504f05c0698248734f9ae8cd289d314ac89707e
   md5: af2df4b9108808da3dc76710fe50eae2
@@ -570,9 +571,9 @@ packages:
   license_family: BSD
   size: 149694
   timestamp: 1777547807038
-- conda: https://conda.anaconda.org/conda-forge/noarch/genai-prices-0.0.65-pyhcf101f3_0.conda
-  sha256: 0eb026254394305a1ddcb54a51b357e393bb3530087e3d5ef5af910ce3d78cd9
-  md5: e77145eee1306f99f9620639fb055202
+- conda: https://conda.anaconda.org/conda-forge/noarch/genai-prices-0.0.66-pyhcf101f3_0.conda
+  sha256: e15e34153e6331b88ec98619620d539f84b43f1680fe7149a69a5b43f741a351
+  md5: 6bf9a632e9a1c92dd9bf0fc7f7739a61
   depends:
   - python >=3.10
   - eval-type-backport >=0.2
@@ -582,8 +583,8 @@ packages:
   - python
   license: MIT
   license_family: MIT
-  size: 68102
-  timestamp: 1780782071608
+  size: 69873
+  timestamp: 1781055759276
 - conda: https://conda.anaconda.org/conda-forge/noarch/griffelib-2.0.2-pyhcf101f3_0.conda
   sha256: f4d0fe5835a6d1e3e828320a1df2117c96a769c788429d78a75ddcafda3cec67
   md5: f7b9e67b788f78c6facf79b3e12b1e13
@@ -862,16 +863,16 @@ packages:
   license_family: MIT
   size: 26062
   timestamp: 1772476821244
-- conda: https://conda.anaconda.org/conda-forge/noarch/logfire-api-4.35.0-pyhcf101f3_0.conda
-  sha256: 7fbc5b21fdfa51f63f68bbadd32dd331c4ce46f928512d125454b5c73a3b789a
-  md5: a007af60a2257d6343999e9a2ee6e542
+- conda: https://conda.anaconda.org/conda-forge/noarch/logfire-api-4.36.0-pyhcf101f3_0.conda
+  sha256: c3fda1de4a6b57916aceb21e4363a8b4b4febed0e8d1644b1293e1e54b002515
+  md5: 65263b2dc2773451eac02a3226499c64
   depends:
   - python >=3.10
   - python
   license: MIT
   license_family: MIT
-  size: 90625
-  timestamp: 1780420711049
+  size: 96113
+  timestamp: 1781044190727
 - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-3.10.2-pyhcf101f3_0.conda
   sha256: 20e0892592a3e7c683e3d66df704a9425d731486a97c34fc56af4da1106b2b6b
   md5: ba0a9221ce1063f31692c07370d062f3
