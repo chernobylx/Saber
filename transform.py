@@ -1,6 +1,6 @@
+import dataframely as dy
 import polars as pl
 from polars import selectors as cs
-import dataframely as dy
 
 link_regex = r'/api/v\d(?:\.\d)?((?:/[a-zA-Z0-9]+)+)'
 class SportSchema(dy.Schema):
@@ -230,7 +230,7 @@ def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame:
         ).alias('off_start')
     ).with_columns(
         pl.when(
-            (pl.col('regular_end') > pl.col('season_end'))
+            pl.col('regular_end') > pl.col('season_end')
         ).then(
             pl.col('season_end')
         ).otherwise(
@@ -238,7 +238,7 @@ def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame:
         ).alias('regular_end'),
 
         pl.when(
-            (pl.col('first_half_end') > pl.col('second_half_start'))
+            pl.col('first_half_end') > pl.col('second_half_start')
         ).then(
             pl.col('second_half_start') - pl.duration(days=1)
         ).otherwise(

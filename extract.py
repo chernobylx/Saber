@@ -1,12 +1,12 @@
-import polars as pl
-from requests import get as GET
-from typing import Callable
-from collections.abc import Iterable
-from time import time as now
+from collections.abc import Callable, Iterable
 from time import sleep
+from time import time as now
+
+import polars as pl
+from joblib import Memory
+from requests import get as GET
 from tqdm import tqdm
 from yarl import URL
-from joblib import Memory
 
 cache = './.cache'
 memory = Memory(cache, verbose=0, compress=6)
@@ -18,70 +18,53 @@ def get(endpoint:str)-> pl.LazyFrame:
 
 @memory.cache
 def get_lazy_frame(endpoint:str = 'sports',
-                   query:dict = None, url:URL = api)-> pl.LazyFrame:
+                   query:dict | None = None, url:URL = api)-> pl.LazyFrame:
     if query is None:
         query = {}
 
     url = url/endpoint % query
-    try:
-        t = now()
+    t = now()
 
-        response = GET(str(url))
+    response = GET(str(url))
 
-        e = now()-t
-        if e < 1:
-            sleep(1-e)
+    e = now()-t
+    if e < 1:
+        sleep(1-e)
 
-        if response.status_code != 200:
-            raise Exception(f"Request failed with status code {response.status_code}")
-        else:
-            json = response.json()[endpoint]
-            return pl.json_normalize(json).lazy()
-    except:
-        raise
+    if response.status_code != 200:
+        raise Exception(f"Request failed with status code {response.status_code}")
+    else:
+        json = response.json()[endpoint]
+        return pl.json_normalize(json).lazy()
 
-def get_sports(query:dict=None)-> pl.LazyFrame:
+def get_sports(query:dict | None=None)-> pl.LazyFrame:
     """Retrieve a DataFrame of available sports from the statsapi.mlb.com
     To get all seasons pass a query without 'season'"""
     if query is None:
         query = {}
-    try:
-        short_a = get_lazy_frame('sports', {'sportId':15})
-        rook_a = get_lazy_frame('sports', {'sportId':5442})
-        rest = get_lazy_frame('sports', query=query)
-        return pl.concat([rest,short_a, rook_a], how = 'diagonal')
-    except:
-        raise
+    short_a = get_lazy_frame('sports', {'sportId':15})
+    rook_a = get_lazy_frame('sports', {'sportId':5442})
+    rest = get_lazy_frame('sports', query=query)
+    return pl.concat([rest,short_a, rook_a], how = 'diagonal')
 
-def get_leagues(query:dict=None)-> pl.LazyFrame:
+def get_leagues(query:dict | None=None)-> pl.LazyFrame:
     """Retrieve a DataFrame of available leagues from statsapi.mlb.com"""
     if query is None:
         query = {}
-    try:
-        return get_lazy_frame('leagues', query=query)
-    except:
-        raise
+    return get_lazy_frame('leagues', query=query)
 
 def get_divisions(years: Iterable[int]=range(2026,1962,-1),
                   sport_id: int=0)-> pl.LazyFrame:
     """Retrieve a DataFrame of available divisions from statsapi.mlb.com
     Earliest season with divisions is 1963"""
     lfs: list[pl.LazyFrame] = []
-    if sport_id:
-        query = {'sportId': sport_id}
-    else:
-        query = {}
+    query = {'sportId': sport_id} if sport_id else {}
     #fields = ['id','name','season','league.id','link','active']
     for year in tqdm(years, desc='Divisions'):
-        try:
-            query['season'] = year
-            lfs.append(
-                get_lazy_frame(endpoint='divisions', query=query).lazy()
-            )
-        except:
-            raise
-
-
+        query['season'] = year
+        lfs.append(
+            get_lazy_frame(endpoint='divisions', query=query).lazy()
+        )
 
     return pl.concat(lfs, how='diagonal')
 
@@ -99,11 +82,7 @@ def get_seasons(years: Iterable[int]=range(2026,1893,-1),
     query['hydrate'] = 'schedule'
     query['seasons'] = ','.join([str(year)for year in years])
 
-
-    try:
-        return get_lazy_frame('leagues', query)
-    except:
-        raise
+    return get_lazy_frame('leagues', query)
 
 def get_teams(years: Iterable[int]= range(2026,1870, -1),
               sport_id:int=0,
@@ -122,11 +101,7 @@ def get_teams(years: Iterable[int]= range(2026,1870, -1),
 
     for year in tqdm(years, desc='Teams'):
         query['season'] = year
-        try:
-            lfs.append(get_lazy_frame(endpoint='teams', query=query))
-        except:
-            raise
-
+        lfs.append(get_lazy_frame(endpoint='teams', query=query))
 
     return pl.concat(lfs, how='diagonal')
 
