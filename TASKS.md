@@ -8,10 +8,6 @@ are an **intermediate** form; the goal is to load all data into
 
 ## 📋 Backlog
 <!-- ordered by priority: top = next up -->
-- [ ] Add pytest tests for `transform_*` functions and schema validation —
-      build small synthetic raw frames, assert transformed output passes the
-      dataframely schemas (SportSchema, LeagueSchema, SeasonSchema,
-      DivisionSchema, TeamSchema, etc.) and the Collection filters
 - [ ] Write README.md — purpose, setup (`pixi install`), how to run the ETL
       marimo app, data-source/reproducibility note (data/statsapi is regenerable
       from extract.py)
@@ -31,3 +27,7 @@ are an **intermediate** form; the goal is to load all data into
       moved DDL into sql/schema.sql (fixed seasons composite PK, verified it
       executes in duckdb) and wired ETL.py to load it via the db connection.
       ty fully passes (2026-06-10)
+- [x] Tests for the transform layer — 15 pytest tests covering each transform_*
+      against its dataframely schema plus normalization logic, and the
+      Collection integrity rules; synthetic fixtures, no network. ty clean
+      (2026-06-10)
