@@ -8,9 +8,6 @@ are an **intermediate** form; the goal is to load all data into
 
 ## 📋 Backlog
 <!-- ordered by priority: top = next up -->
-- [ ] Write README.md — purpose, setup (`pixi install`), how to run the ETL
-      marimo app, data-source/reproducibility note (data/statsapi is regenerable
-      from extract.py)
 - [ ] Finish the DuckDB load step in ETL.py (end goal) — DDL now lives in
       sql/schema.sql (sports + seasons done; leagues/divisions/division_seasons/
       teams/team_seasons still TODO there). Write all validated frames into
@@ -31,3 +28,5 @@ are an **intermediate** form; the goal is to load all data into
       against its dataframely schema plus normalization logic, and the
       Collection integrity rules; synthetic fixtures, no network. ty clean
       (2026-06-10)
+- [x] Write README.md — purpose, setup, how to run the marimo ETL app, project
+      structure, reproducibility note (2026-06-10)
