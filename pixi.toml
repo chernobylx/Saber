@@ -10,6 +10,11 @@ SSL_CERT_FILE = ".pixi\\envs\\default\\Lib\\site-packages\\certifi\\cacert.pem"
 SSL_CERT_DIR =  ".pixi\\envs\\default\\Lib\\site-packages\\certifi"
 
 [tasks]
+lint      = "ruff check ."
+format    = "ruff format ."
+typecheck = "ty check ."
+test      = "pytest"
+check     = { depends-on = ["lint", "typecheck", "test"] }
 
 [dependencies]
 polars = ">=1.41.2,<2"
