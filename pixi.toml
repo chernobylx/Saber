@@ -5,6 +5,10 @@ name = "saber"
 platforms = ["win-64"]
 version = "0.1.0"
 
+[activation.env]
+SSL_CERT_FILE = ".pixi\\envs\\default\\Lib\\site-packages\\certifi\\cacert.pem"
+SSL_CERT_DIR =  ".pixi\\envs\\default\\Lib\\site-packages\\certifi"
+
 [tasks]
 
 [dependencies]
