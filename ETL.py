@@ -19,6 +19,7 @@ def _():
 
     return (
         DivisionSchema,
+        DivisionSeasonsSchema,
         LeagueCollection,
         LeagueSchema,
         Path,
@@ -39,26 +40,26 @@ def _():
 
 
 @app.cell
-def _(Path, endpoints):
+def _(Path, endpoints, get):
     data = Path('data/statsapi')
+    #create folder if necessary
     if not data.exists():
         data.mkdir(parents=True)
+    #get list of tables to load
     tables = endpoints.keys()
+    #build file paths
     paths = [data/(table+'.parquet') for table in tables]
-    return data, paths, tables
-
-
-@app.cell
-def _(get, paths, tables):
+    #download missing tables
     for table, path in zip(tables, paths):
         if not path.exists():
             get(table).collect().write_parquet(path)
-    return
+    return (data,)
 
 
 @app.cell
 def _(
     DivisionSchema,
+    DivisionSeasonsSchema,
     LeagueCollection,
     LeagueSchema,
     SeasonSchema,
@@ -91,6 +92,7 @@ def _(
     leagues =  LeagueSchema.validate(leagues, cast=True).lazy()
     seasons = SeasonSchema.validate(seasons, cast=True).lazy()
     divisions = DivisionSchema.validate(divisions, cast=True).lazy()
+    division_seasons = DivisionSeasonsSchema.validate(division_seasons, cast=True).lazy()
     teams = TeamSchema.validate(teams, cast=True).lazy()
     team_seasons = team_seasons.with_columns(
         pl.col.league_id.fill_null(-1)
@@ -105,18 +107,11 @@ def _(
         'teams': teams,
         'team_seasons': team_seasons
     })
-    return bad, division_seasons
-
-
-@app.cell
-def _(bad):
-    bad['sports']._df
     return
 
 
 @app.cell
-def _(division_seasons):
-    division_seasons.collect()
+def _():
     return
 
 
