@@ -6,16 +6,29 @@ app = marimo.App(width="columns")
 
 @app.cell(column=0)
 def _():
-    import polars as pl
-    from extract import endpoints, get
-    from transform import (transform_sports, transform_leagues, transform_seasons,
-                           transform_divisions, transform_teams,TeamsBySeasonSchema)
-    from transform import (DivisionSchema, DivisionSeasonsSchema,SportSchema, LeagueSchema,
-                           SeasonSchema, TeamSchema)
-    from transform import SportsSeasons, LeagueCollection
     from pathlib import Path
+
     import duckdb
     import marimo as mo
+    import polars as pl
+
+    from extract import endpoints, get
+    from transform import (
+        DivisionSchema,
+        DivisionSeasonsSchema,
+        LeagueCollection,
+        LeagueSchema,
+        SeasonSchema,
+        SportSchema,
+        SportsSeasons,
+        TeamsBySeasonSchema,
+        TeamSchema,
+        transform_divisions,
+        transform_leagues,
+        transform_seasons,
+        transform_sports,
+        transform_teams,
+    )
 
     db = duckdb.connect("data/statsapi/statsapi.duckdb")
     return (
@@ -95,34 +108,47 @@ def _(
     leagues =  LeagueSchema.validate(leagues, cast=True).lazy()
     seasons = SeasonSchema.validate(seasons, cast=True).lazy()
     divisions = DivisionSchema.validate(divisions, cast=True).lazy()
-    division_seasons = DivisionSeasonsSchema.validate(division_seasons, cast=True).lazy()
+    division_seasons = DivisionSeasonsSchema.validate(
+        division_seasons, cast=True
+    ).lazy()
     teams = TeamSchema.validate(teams, cast=True).lazy()
     team_seasons = team_seasons.with_columns(
         pl.col.league_id.fill_null(-1)
     )
     team_seasons = TeamsBySeasonSchema.validate(team_seasons, cast=True).lazy()
 
-    SC, bad = SportsSeasons.filter({'sports':sports, 'seasons':seasons})
+    SC, _bad = SportsSeasons.filter({'sports':sports, 'seasons':seasons})
     LC = LeagueCollection.validate({
         'leagues': leagues,
         'divisions': divisions,
         'seasons': SC.seasons,
         'team_seasons': team_seasons
     })
-    return
+    return LC, SC, division_seasons, teams
 
 
 @app.cell
-def _(Path, db):
-    #create tables from the versioned schema (see sql/schema.sql)
+def _(LC, Path, SC, db, division_seasons, teams):
+    #(re)create the tables, then load the validated, integrity-checked frames.
+    #CREATE OR REPLACE in schema.sql makes this idempotent across reruns.
     db.execute(Path('sql/schema.sql').read_text())
+
+    frames = {
+        'sports': SC.sports,
+        'leagues': LC.leagues,
+        'seasons': LC.seasons,
+        'divisions': LC.divisions,
+        'division_seasons': division_seasons,
+        'teams': teams,
+        'team_seasons': LC.team_seasons,
+    }
+    for _name, _lf in frames.items():
+        _frame = _lf.collect()
+        db.register('_load', _frame)
+        db.execute(f"INSERT INTO main.{_name} BY NAME SELECT * FROM _load")
+        db.unregister('_load')
+
     db.sql("SHOW ALL TABLES")
-    return
-
-
-@app.cell
-def _(SeasonSchema):
-    SeasonSchema
     return
 
 

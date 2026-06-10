@@ -8,11 +8,7 @@ are an **intermediate** form; the goal is to load all data into
 
 ## 📋 Backlog
 <!-- ordered by priority: top = next up -->
-- [ ] Finish the DuckDB load step in ETL.py (end goal) — DDL now lives in
-      sql/schema.sql (sports + seasons done; leagues/divisions/division_seasons/
-      teams/team_seasons still TODO there). Write all validated frames into
-      statsapi.duckdb. Clear the residual ETL.py lint findings as part of this
-      (F841 LC, import sort/E501 in the load cells, B018 SeasonSchema scratch)
+<!-- empty — core ETL is complete; add analysis/query work here next -->
 
 ## ✅ Done
 - [x] Set up dev tooling — `[tasks]` in pixi.toml (lint/format/typecheck/
@@ -30,3 +26,9 @@ are an **intermediate** form; the goal is to load all data into
       (2026-06-10)
 - [x] Write README.md — purpose, setup, how to run the marimo ETL app, project
       structure, reproducibility note (2026-06-10)
+- [x] DuckDB load — full DDL for all 7 tables in sql/schema.sql (derived from
+      the dataframely schemas); ETL.py load cell (re)creates tables and inserts
+      the integrity-checked frames idempotently (CREATE OR REPLACE + INSERT BY
+      NAME). Verified end-to-end against real parquet: statsapi.duckdb populated
+      (sports 14, leagues 118, seasons 924, divisions 89, division_seasons 1795,
+      teams 2143, team_seasons 30052). pixi run check is green (2026-06-10)

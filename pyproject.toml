@@ -11,6 +11,10 @@ target-version = "py313"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
+[tool.ruff.lint.isort]
+# flat layout: these live at the repo root, not under src/
+known-first-party = ["extract", "transform", "tests"]
+
 [tool.ty.environment]
 python-version = "3.13"
 
