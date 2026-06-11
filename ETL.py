@@ -43,10 +43,8 @@ def _():
         SportsSeasons,
         TeamSchema,
         TeamsBySeasonSchema,
-        duckdb,
         endpoints,
         get,
-        mo,
         pl,
         transform_divisions,
         transform_leagues,
@@ -125,66 +123,6 @@ def _(
         'seasons': SC.seasons,
         'team_seasons': team_seasons
     })
-    return
-
-
-@app.cell
-def _(Path, duckdb):
-    #(re)create the tables, then load the validated, integrity-checked frames.
-    #CREATE OR REPLACE in schema.sql makes this idempotent across reruns.
-    with duckdb.connect("data/statsapi/statsapi.duckdb") as db:
-        db.execute(Path('sql/schema.sql').read_text())
-
-    return (db,)
-
-
-app._unparsable_cell(
-    r"""
-    frames = {
-        'sports': SC.sports,
-        'leagues': LC.leagues,
-        'seasons': LC.seasons,
-        'divisions': LC.divisions,
-        'division_seasons': division_seasons,
-        'teams': teams,
-        'team_seasons': LC.team_seasons,
-    }
-    with db = duckdb.connect("data/statsapi/statsapi.duckdb"):
-        for _name, _lf in frames.items():
-            _frame = _lf.collect()
-            db.register('_load', _frame)
-            db.execute(f"INSERT INTO main.{_name} BY NAME SELECT * FROM _load")
-            db.unregister('_load')
-
-        db.sql("SHOW ALL TABLES")
-    """,
-    name="_"
-)
-
-
-@app.cell
-def _():
-    import sqlalchemy
-
-    DATABASE_URL = f"postgresql://postgres:POSTGRES_PASSWORD@localhost:5432/postgres"
-    engine = sqlalchemy.create_engine(DATABASE_URL)
-    return (engine,)
-
-
-@app.cell(hide_code=True)
-def _(engine, mo):
-    _df = mo.sql(
-        f"""
-        SHOW ALL TABLES
-        """,
-        engine=engine
-    )
-    return
-
-
-@app.cell
-def _(db):
-    db.close()
     return
 
 
