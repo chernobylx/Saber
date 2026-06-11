@@ -2,46 +2,57 @@
 --
 -- Tables mirror the dataframely schemas in transform.py (column names,
 -- nullability, and keys). The parquet files under data/statsapi/ are an
--- intermediate form; this database is the serving store. CREATE OR REPLACE
--- keeps the load step idempotent across marimo reruns.
 --
 -- link columns share the same shape; the regex is repeated per table because
--- DuckDB CHECK constraints cannot reference a shared expression.
+Begin Transaction;
 
-CREATE OR REPLACE TABLE main.sports (
-    sport_id   UINTEGER NOT NULL,
-    sport_code TEXT     UNIQUE NOT NULL,
-    sport_name TEXT     UNIQUE NOT NULL,
+CREATE SCHEMA IF NOT EXISTS api;
+
+CREATE DOMAIN API_LINK as TEXT
+    CHECK (VALUE ~ '/api/v\d(?:\.\d)?((?:/[a-zA-Z0-9]+)+)');
+
+
+CREATE TABLE api.sports (
+    sport_id    INTEGER CHECK (sport_id>=0) NOT NULL,
+    sport_code  TEXT     UNIQUE NOT NULL,
+    sport_name  TEXT     UNIQUE NOT NULL,
     sport_abbr TEXT     UNIQUE NOT NULL,
-    sort_order UINTEGER UNIQUE NOT NULL,
-    sport_link TEXT     UNIQUE NOT NULL,
-    CONSTRAINT pk_sports PRIMARY KEY (sport_id),
-    CONSTRAINT sport_link_regex
-        CHECK (sport_link ~ '/api/v\d(?:\.\d)?((?:/[a-zA-Z0-9]+)+)')
+    sort_order INTEGER CHECK (sort_order>=0) UNIQUE NOT NULL,
+    sport_link API_LINK     UNIQUE NOT NULL,
+    --------------------------------------------
+    CONSTRAINT pk_sports PRIMARY KEY (sport_id)
 );
 
-CREATE OR REPLACE TABLE main.leagues (
-    league_id   UINTEGER NOT NULL,
+CREATE TABLE api.leagues (
+    league_id INTEGER CHECK (league_id>=0) NOT NULL,
     league_name TEXT     NOT NULL,
     league_abbr TEXT     UNIQUE NOT NULL,
-    last_season UINTEGER NOT NULL,
+    last_season INTEGER CHECK (last_season>=0) NOT NULL,
     is_active   BOOLEAN  NOT NULL,
-    sort_order  UINTEGER UNIQUE NOT NULL,
-    league_link TEXT     UNIQUE NOT NULL,
-    CONSTRAINT pk_leagues PRIMARY KEY (league_id),
-    CONSTRAINT league_link_regex
-        CHECK (league_link ~ '/api/v\d(?:\.\d)?((?:/[a-zA-Z0-9]+)+)')
+    sort_order INTEGER CHECK (sort_order>=0) UNIQUE NOT NULL,
+    league_link API_LINK     UNIQUE NOT NULL,
+    ---------------------------------------------
+    CONSTRAINT pk_leagues PRIMARY KEY (league_id)
 );
 
-CREATE OR REPLACE TABLE main.seasons (
-    league_id         UINTEGER NOT NULL REFERENCES main.leagues (league_id),
-    season            UINTEGER NOT NULL,
-    sport_id          UINTEGER NOT NULL REFERENCES main.sports (sport_id),
-    n_games           UINTEGER NOT NULL,
-    n_teams           UINTEGER NOT NULL,
+CREATE TABLE api.teams (
+    team_id INTEGER CHECK (team_id>=0) NOT NULL,
+    team_link API_LINK     UNIQUE NOT NULL,
+    is_active BOOLEAN  NOT NULL,
+    CONSTRAINT pk_teams PRIMARY KEY (team_id)
+);
+
+
+CREATE TABLE api.seasons (
+    season_id INTEGER PRIMARY KEY,
+    league_id INTEGER CHECK (league_id>=0) NOT NULL REFERENCES api.leagues (league_id),
+    season INTEGER CHECK (season>=0) NOT NULL,
+    sport_id INTEGER CHECK (sport_id>=0) NOT NULL REFERENCES api.sports (sport_id),
+    n_games INTEGER CHECK (n_games>=0) NOT NULL,
+    n_teams INTEGER CHECK (n_teams>=0) NOT NULL,
     has_divisions     BOOLEAN  NOT NULL,
     has_split_season  BOOLEAN  NOT NULL,
-    n_wildcard_teams  UINTEGER NOT NULL,
+    n_wildcard_teams INTEGER CHECK (n_wildcard_teams>=0) NOT NULL,
     pre_start         DATE     NOT NULL,
     pre_end           DATE     NOT NULL,
     spring_start      DATE,
@@ -58,47 +69,41 @@ CREATE OR REPLACE TABLE main.seasons (
     off_start         DATE     NOT NULL,
     off_end           DATE,
     -- a (league, season, sport) triple is unique, not each column
-    CONSTRAINT pk_seasons PRIMARY KEY (season, league_id, sport_id)
+    CONSTRAINT unique_season_league_sport  UNIQUE (season, league_id, sport_id)
 );
 
-CREATE OR REPLACE TABLE main.divisions (
-    division_id   UINTEGER NOT NULL,
+CREATE TABLE api.divisions (
+    division_id INTEGER CHECK (division_id>=0) UNIQUE NOT NULL PRIMARY KEY,
     division_name TEXT     UNIQUE NOT NULL,
-    league_id     UINTEGER NOT NULL REFERENCES main.leagues (league_id),
+    league_id INTEGER CHECK (league_id>=0) NOT NULL REFERENCES api.leagues (league_id),
     is_active     BOOLEAN  NOT NULL,
-    division_link TEXT     UNIQUE NOT NULL,
-    CONSTRAINT pk_divisions PRIMARY KEY (division_id, league_id),
-    CONSTRAINT division_link_regex
-        CHECK (division_link ~ '/api/v\d(?:\.\d)?((?:/[a-zA-Z0-9]+)+)')
+    division_link API_LINK     UNIQUE NOT NULL
 );
 
-CREATE OR REPLACE TABLE main.division_seasons (
-    division_id UINTEGER NOT NULL REFERENCES main.divisions (division_id),
-    season      UINTEGER NOT NULL REFERENCES main.seasons (season),
-    CONSTRAINT pk_division_seasons PRIMARY KEY (division_id, season)
+CREATE TABLE api.division_seasons (
+    division_id INTEGER CHECK (division_id>=0) NOT NULL REFERENCES api.divisions (division_id),
+    season_id INTEGER CHECK (season_id>=0) NOT NULL REFERENCES api.seasons (season_id),
+    CONSTRAINT pk_division_seasons PRIMARY KEY (division_id, season_id)
 );
 
-CREATE OR REPLACE TABLE main.teams (
-    team_id   UINTEGER NOT NULL,
-    team_link TEXT     UNIQUE NOT NULL,
-    is_active BOOLEAN  NOT NULL,
-    CONSTRAINT pk_teams PRIMARY KEY (team_id),
-    CONSTRAINT team_link_regex
-        CHECK (team_link ~ '/api/v\d(?:\.\d)?((?:/[a-zA-Z0-9]+)+)')
-);
 
-CREATE OR REPLACE TABLE main.team_seasons (
-    team_id          UINTEGER NOT NULL REFERENCES main.teams (team_id),
-    season           UINTEGER NOT NULL REFERENCES main.seasons (season),
+
+CREATE TABLE api.team_seasons (
+    team_id INTEGER CHECK (team_id>=0) NOT NULL REFERENCES api.teams (team_id),
+    season_id INTEGER CHECK (season_id>=0) NOT NULL REFERENCES api.seasons (season_id),
     team_name        TEXT     NOT NULL,
     team_code        TEXT     NOT NULL,
     league_id        INTEGER  NOT NULL,  -- signed: -1 marks unaffiliated teams
-    sport_id         UINTEGER NOT NULL,
-    division_id      UINTEGER,
+    sport_id INTEGER CHECK (sport_id>=0) NOT NULL,
+    division_id INTEGER CHECK (division_id>=0),
     location_name    TEXT,
-    venue_id         UINTEGER,
-    spring_league_id UINTEGER,
-    spring_venue_id  UINTEGER,
-    parent_org_id    UINTEGER,
-    CONSTRAINT pk_team_seasons PRIMARY KEY (team_id, season, league_id)
+    venue_id INTEGER CHECK (venue_id>=0),
+    spring_league_id INTEGER CHECK (spring_league_id>=0),
+    spring_venue_id INTEGER CHECK (spring_venue_id>=0),
+    parent_org_id INTEGER CHECK (parent_org_id>=0),
+    -----------------------------------------------------------
+    CONSTRAINT pk_team_seasons PRIMARY KEY (team_id, season_id)
 );
+
+--rollback;
+--commit;
