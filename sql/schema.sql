@@ -45,9 +45,9 @@ CREATE TABLE api.teams (
 
 CREATE TABLE api.seasons (
     season_id INTEGER PRIMARY KEY,
-    league_id INTEGER CHECK (league_id>=0) NOT NULL REFERENCES api.leagues (league_id),
-    season INTEGER CHECK (season>=0) NOT NULL,
-    sport_id INTEGER CHECK (sport_id>=0) NOT NULL REFERENCES api.sports (sport_id),
+    league_id INTEGER NOT NULL REFERENCES api.leagues (league_id),
+    year INTEGER CHECK (year>=0) NOT NULL,
+    sport_id INTEGER NOT NULL REFERENCES api.sports (sport_id),
     n_games INTEGER CHECK (n_games>=0) NOT NULL,
     n_teams INTEGER CHECK (n_teams>=0) NOT NULL,
     has_divisions     BOOLEAN  NOT NULL,
@@ -69,33 +69,26 @@ CREATE TABLE api.seasons (
     off_start         DATE     NOT NULL,
     off_end           DATE,
     -- a (league, season, sport) triple is unique, not each column
-    CONSTRAINT unique_season_league_sport  UNIQUE (season, league_id, sport_id)
+    CONSTRAINT unique_season_league_sport  UNIQUE (year, league_id, sport_id)
 );
 
 CREATE TABLE api.divisions (
     division_id INTEGER CHECK (division_id>=0) UNIQUE NOT NULL PRIMARY KEY,
     division_name TEXT     UNIQUE NOT NULL,
-    league_id INTEGER CHECK (league_id>=0) NOT NULL REFERENCES api.leagues (league_id),
+    league_id INTEGER  NOT NULL REFERENCES api.leagues (league_id),
     is_active     BOOLEAN  NOT NULL,
     division_link API_LINK     UNIQUE NOT NULL
 );
 
-CREATE TABLE api.division_seasons (
-    division_id INTEGER CHECK (division_id>=0) NOT NULL REFERENCES api.divisions (division_id),
-    season_id INTEGER CHECK (season_id>=0) NOT NULL REFERENCES api.seasons (season_id),
-    CONSTRAINT pk_division_seasons PRIMARY KEY (division_id, season_id)
-);
-
-
 
 CREATE TABLE api.team_seasons (
-    team_id INTEGER CHECK (team_id>=0) NOT NULL REFERENCES api.teams (team_id),
-    season_id INTEGER CHECK (season_id>=0) NOT NULL REFERENCES api.seasons (season_id),
+    team_id INTEGER NOT NULL REFERENCES api.teams (team_id),
+    season_id INTEGER NOT NULL REFERENCES api.seasons (season_id),
+    division_id INTEGER not null references api.divisions  (division_id),
     team_name        TEXT     NOT NULL,
     team_code        TEXT     NOT NULL,
     league_id        INTEGER  NOT NULL,  -- signed: -1 marks unaffiliated teams
     sport_id INTEGER CHECK (sport_id>=0) NOT NULL,
-    division_id INTEGER CHECK (division_id>=0),
     location_name    TEXT,
     venue_id INTEGER CHECK (venue_id>=0),
     spring_league_id INTEGER CHECK (spring_league_id>=0),
@@ -106,4 +99,4 @@ CREATE TABLE api.team_seasons (
 );
 
 --rollback;
---commit;
+commit;
