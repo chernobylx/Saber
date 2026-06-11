@@ -34,9 +34,9 @@ CREATE OR REPLACE TABLE main.leagues (
 );
 
 CREATE OR REPLACE TABLE main.seasons (
-    league_id         UINTEGER NOT NULL,
+    league_id         UINTEGER NOT NULL REFERENCES main.leagues (league_id),
     season            UINTEGER NOT NULL,
-    sport_id          UINTEGER NOT NULL,
+    sport_id          UINTEGER NOT NULL REFERENCES main.sports (sport_id),
     n_games           UINTEGER NOT NULL,
     n_teams           UINTEGER NOT NULL,
     has_divisions     BOOLEAN  NOT NULL,
@@ -64,7 +64,7 @@ CREATE OR REPLACE TABLE main.seasons (
 CREATE OR REPLACE TABLE main.divisions (
     division_id   UINTEGER NOT NULL,
     division_name TEXT     UNIQUE NOT NULL,
-    league_id     UINTEGER NOT NULL,
+    league_id     UINTEGER NOT NULL REFERENCES main.leagues (league_id),
     is_active     BOOLEAN  NOT NULL,
     division_link TEXT     UNIQUE NOT NULL,
     CONSTRAINT pk_divisions PRIMARY KEY (division_id, league_id),
@@ -73,8 +73,8 @@ CREATE OR REPLACE TABLE main.divisions (
 );
 
 CREATE OR REPLACE TABLE main.division_seasons (
-    division_id UINTEGER NOT NULL,
-    season      UINTEGER NOT NULL,
+    division_id UINTEGER NOT NULL REFERENCES main.divisions (division_id),
+    season      UINTEGER NOT NULL REFERENCES main.seasons (season),
     CONSTRAINT pk_division_seasons PRIMARY KEY (division_id, season)
 );
 
@@ -88,8 +88,8 @@ CREATE OR REPLACE TABLE main.teams (
 );
 
 CREATE OR REPLACE TABLE main.team_seasons (
-    team_id          UINTEGER NOT NULL,
-    season           UINTEGER NOT NULL,
+    team_id          UINTEGER NOT NULL REFERENCES main.teams (team_id),
+    season           UINTEGER NOT NULL REFERENCES main.seasons (season),
     team_name        TEXT     NOT NULL,
     team_code        TEXT     NOT NULL,
     league_id        INTEGER  NOT NULL,  -- signed: -1 marks unaffiliated teams
