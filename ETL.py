@@ -30,9 +30,11 @@ def _():
         transform_teams,
     )
 
+    import sqlalchemy
 
-
+    DATABASE_URL = f"postgresql://postgres:POSTGRES_PASSWORD@localhost:5432/saber"
     return (
+        DATABASE_URL,
         DivisionSchema,
         DivisionSeasonsSchema,
         LeagueCollection,
@@ -46,12 +48,19 @@ def _():
         endpoints,
         get,
         pl,
+        sqlalchemy,
         transform_divisions,
         transform_leagues,
         transform_seasons,
         transform_sports,
         transform_teams,
     )
+
+
+@app.cell
+def _(DATABASE_URL, sqlalchemy):
+    engine = sqlalchemy.create_engine(DATABASE_URL)
+    return
 
 
 @app.cell
