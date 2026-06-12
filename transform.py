@@ -323,6 +323,7 @@ def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
         pl.col('link').alias('team_link'),
         pl.col('active').alias('is_active'),
         pl.col('parentOrgId').alias('parent_org_id'),
+        pl.col('firstYearOfPlay').alias('first_year')
     )
 
     name_modes = lf.group_by(
@@ -350,7 +351,7 @@ def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
     )
 
     teams = lf.select(
-        ['team_id', 'is_active', 'team_link']
+        ['team_id', 'is_active', 'team_link', 'first_year']
     ).unique()
 
     teams_seasons = lf.select(
