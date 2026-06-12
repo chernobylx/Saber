@@ -93,8 +93,9 @@ class TeamSchema(dy.Schema):
 class TeamSeasonSchema(dy.Schema):
     squad_id = dy.UInt32(nullable=False, primary_key=True)
     team_id = dy.UInt32(nullable=False)
-    league_id = dy.Int32(nullable=False, primary_key=True)
-    year = dy.UInt32(nullable=False)
+    season_id = dy.UInt32(nullable=False, primary_key=True)
+    league_id = dy.Int32(nullable=False, primary_key=True)#retained for dataframely
+    #year = dy.UInt32(nullable=False)
     division_id = dy.UInt32(nullable=True)
     team_name = dy.String(nullable=False)
     team_code = dy.String(nullable=False)
@@ -324,11 +325,11 @@ def transform_divisions(divisions: pl.LazyFrame,
     ).unique()
     return div, div_seasons
 
-def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
+def transform_teams(lf:pl.LazyFrame, league_seasons:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
     lf = lf.select(
         pl.col('id').alias('team_id'),
         pl.col('name').alias('team_name'),
-        pl.col('league.id').alias('league_id'),
+        pl.col('league.id').alias('league_id'),#retained for dataframely
         pl.col('season').alias('year'),
         pl.col('sport.id').alias('sport_id'),
         pl.col('division.id').alias('division_id'),
@@ -374,6 +375,7 @@ def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
         cs.exclude('location_mode')
     )
 
+
     teams = lf.select(
         ['team_id', 'is_active', 'team_link', 'first_year']
     ).unique()
@@ -384,6 +386,19 @@ def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
     #materialize the row index: projection pushdown would otherwise drop
     #'squad_id' during lazy validation (ColumnNotFoundError)
 
+    #join on league seasons to get season_id
+    lf = lf.join(
+        league_seasons.select(
+            pl.col('season_id'),
+            pl.col('league_id'),
+            pl.col('year'),
+        ).lazy(),
+        left_on=['league_id', 'year'],
+        right_on=['league_id', 'year'],
+        how='left'
+    ).select(
+        cs.exclude(['year'])
+    )
     return teams, teams_seasons
 
 
