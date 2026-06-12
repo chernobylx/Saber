@@ -98,7 +98,7 @@ class TeamSchema(dy.Schema):
     team_id = dy.UInt32(nullable=False, primary_key=True)
     team_link = dy.String(nullable=False, regex=link_regex, unique=True)
     is_active = dy.Bool(nullable=False)
-    first_year = dy.UInt32(nullable=False)
+    first_year = dy.UInt32(nullable=True)
 
 class TeamSeasonSchema(dy.Schema):
     squad_id = dy.UInt32(nullable=False, primary_key=True)
@@ -310,13 +310,12 @@ def transform_divisions(divisions: pl.LazyFrame,
 def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
     lf = lf.select(
         pl.col('id').alias('team_id'),
-        pl.col('season'),
         pl.col('name').alias('team_name'),
+        pl.col('league.id').alias('league_id'),
+        pl.col('season').alias('year'),
+        pl.col('division.id').alias('division_id'),
         pl.col('teamCode').alias('team_code'),
         pl.col('locationName').alias('location_name'),
-        pl.col('league.id').alias('league_id'),
-        pl.col('sport.id').alias('sport_id'),
-        pl.col('division.id').alias('division_id'),
         pl.col('venue.id').alias('venue_id'),
         pl.col('springLeague.id').alias('spring_league_id'),
         pl.col('springVenue.id').alias('spring_venue_id'),
@@ -356,7 +355,9 @@ def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
 
     teams_seasons = lf.select(
         cs.exclude(['team_link', 'is_active'])
-    )
+    ).with_row_index(name='squad_id').collect().lazy()
+    #materialize the row index: projection pushdown would otherwise drop
+    #'squad_id' during lazy validation (ColumnNotFoundError)
 
     return teams, teams_seasons
 

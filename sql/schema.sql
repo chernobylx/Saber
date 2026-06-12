@@ -53,7 +53,7 @@ CREATE TABLE api.teams (
     team_id INTEGER CHECK (team_id>=0),
     team_link API_LINK     UNIQUE NOT NULL,
     is_active BOOLEAN  NOT NULL,
-    first_year integer not null check (first_year>0),
+    first_year integer check (first_year>0),
     -------------------------------------------------------------
     CONSTRAINT pk_teams PRIMARY KEY (team_id)
 );
@@ -86,7 +86,7 @@ CREATE TABLE api.league_seasons (
     off_end           DATE,
     -- a (league, season, sport) triple is unique, not each column
     constraint pk_seasons primary key (season_id),
-    CONSTRAINT unique_season_league_sport  UNIQUE (year, league_id, sport_id),
+    CONSTRAINT unique_year_league  UNIQUE (year, league_id),
     constraint fk_league_seasons_leagues foreign key (league_id) REFERENCES api.leagues (league_id),
     constraint fk_league_seasons_sports foreign key (sport_id) REFERENCES api.sports (sport_id)
 );
@@ -107,21 +107,24 @@ CREATE TABLE api.divisions (
 CREATE TABLE api.team_seasons (
 	squad_id INTEGER not null,
     team_id INTEGER NOT NULL ,
-    season_id INTEGER NOT NULL,
+    league_id        INTEGER  ,  -- signed: -1 marks unaffiliated teams
+    year INTEGER NOT NULL,
     division_id INTEGER not null,
     team_name        TEXT     NOT NULL,
     team_code        TEXT     NOT NULL,
-    league_id        INTEGER  ,  -- signed: -1 marks unaffiliated teams
     location_name    TEXT,
     venue_id INTEGER CHECK (venue_id>=0),
     spring_league_id INTEGER CHECK (spring_league_id>=0),
     spring_venue_id INTEGER CHECK (spring_venue_id>=0),
     parent_org_id INTEGER references api.teams (team_id),
+    is_ative BOOLEAN not null,
+    team_link API_LINK not null,
+    first_year integer not null check (first_year>0),
     -----------------------------------------------------------
     CONSTRAINT pk_team_seasons primary key(squad_id),
     constraint fk_team_seasons_leagues foreign key (league_id) references api.leagues (league_id),
     constraint fk_team_seasons_teams foreign key (team_id) REFERENCES api.teams (team_id),
-    constraint fk_team_seasons_seasons foreign key (season_id) REFERENCES api.league_seasons (season_id),
+    constraint fk_team_seasons_league_seasons foreign key (league_id, year) REFERENCES api.league_seasons (league_id, year),
     constraint fk_team_seasons_divisions foreign key (division_id) references api.divisions  (division_id),
     constraint fk_team_seasons_spring_league foreign key (spring_league_id) references api.leagues (league_id)
 );
