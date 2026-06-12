@@ -107,8 +107,9 @@ CREATE TABLE api.divisions (
 CREATE TABLE api.team_seasons (
 	squad_id INTEGER not null,
     team_id INTEGER NOT NULL ,
-    league_id        INTEGER  ,  -- signed: -1 marks unaffiliated teams
-    year INTEGER NOT NULL,
+    season_id INTEGER NOT NULL,
+    --league_id        INTEGER  ,  -- signed: -1 marks unaffiliated teams
+    --year INTEGER NOT NULL,
     sport_id INTEGER not null,
     division_id INTEGER,
     team_name        TEXT     NOT NULL,
@@ -122,7 +123,7 @@ CREATE TABLE api.team_seasons (
     CONSTRAINT pk_team_seasons primary key(squad_id),
     constraint fk_team_seasons_leagues foreign key (league_id) references api.leagues (league_id),
     constraint fk_team_seasons_teams foreign key (team_id) REFERENCES api.teams (team_id),
-    constraint fk_team_seasons_league_seasons foreign key (league_id, year) REFERENCES api.league_seasons (league_id, year),
+    constraint fk_team_seasons_league_seasons foreign key (season_id) REFERENCES api.league_seasons (season_id),
     constraint fk_team_seasons_divisions foreign key (division_id) references api.divisions  (division_id),
     constraint fk_team_seasons_spring_league foreign key (spring_league_id) references api.leagues (league_id),
     constraint fk_team_seasons_sports foreign key (sport_id) references api.sports (sport_id)
