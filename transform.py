@@ -23,10 +23,11 @@ class LeagueSchema(dy.Schema):
 
 
 
-class SeasonSchema(dy.Schema):
+class LeagueSeasonSchema(dy.Schema):
+    season_id = dy.UInt32(nullable=False, primary_key=True)
     league_id = dy.UInt32(nullable=False, primary_key=True)
-    season = dy.UInt32(nullable=False, primary_key=True)
-    sport_id = dy.UInt32(nullable=False, primary_key=True)
+    year = dy.UInt32(nullable=False)
+    sport_id = dy.UInt32(nullable=False)
     n_games = dy.UInt32(nullable=False)
     n_teams = dy.UInt32(nullable=False)
     has_divisions = dy.Bool(nullable=False)
@@ -48,6 +49,9 @@ class SeasonSchema(dy.Schema):
     off_start = dy.Date(nullable=False)
     off_end = dy.Date(nullable=True)
 
+    @dy.rule()
+    def unique_seasons(cls) -> pl.Expr:
+        return pl.col('year', 'league_id').is_unique()
     @dy.rule()
     def general_causality(cls)->pl.Expr:
         expr = pl.col('pre_start') <= pl.col('pre_end')
@@ -77,7 +81,7 @@ class DivisionSeasonsSchema(dy.Schema):
 
 class SportsSeasons(dy.Collection):
     sports: dy.LazyFrame[SportSchema]
-    seasons: dy.LazyFrame[SeasonSchema]
+    seasons: dy.LazyFrame[LeagueSeasonSchema]
 
     @dy.filter()
     def seasons_sports(self)->pl.LazyFrame:
@@ -94,10 +98,12 @@ class TeamSchema(dy.Schema):
     team_id = dy.UInt32(nullable=False, primary_key=True)
     team_link = dy.String(nullable=False, regex=link_regex, unique=True)
     is_active = dy.Bool(nullable=False)
+    first_year = dy.UInt32(nullable=False)
 
-class TeamsBySeasonSchema(dy.Schema):
-    team_id = dy.UInt32(nullable=False, primary_key=True)
-    season = dy.UInt32(nullable=False, primary_key=True)
+class TeamSeasonSchema(dy.Schema):
+    squad_id = dy.UInt32(nullable=False, primary_key=True)
+    team_id = dy.UInt32(nullable=False)
+    season = dy.UInt32(nullable=False)
     team_name = dy.String(nullable=False)
     team_code = dy.String(nullable=False)
     league_id = dy.Int32(nullable=False, primary_key=True)
@@ -112,8 +118,8 @@ class TeamsBySeasonSchema(dy.Schema):
 class LeagueCollection(dy.Collection):
     leagues: dy.LazyFrame[LeagueSchema]
     divisions: dy.LazyFrame[DivisionSchema]
-    team_seasons: dy.LazyFrame[TeamsBySeasonSchema]
-    seasons: dy.LazyFrame[SeasonSchema]
+    team_seasons: dy.LazyFrame[TeamSeasonSchema]
+    seasons: dy.LazyFrame[LeagueSeasonSchema]
 
     @dy.filter()
     def enforce_foreign_keys(self)->pl.LazyFrame:
@@ -258,6 +264,7 @@ def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame:
 
 def transform_divisions(divisions: pl.LazyFrame,
                         leagues:pl.LazyFrame)-> tuple[pl.LazyFrame, pl.LazyFrame]:
+    #construct unique names for divisions with null names
     division_names = divisions.join(
         leagues.select(
             'league_id',
@@ -278,6 +285,7 @@ def transform_divisions(divisions: pl.LazyFrame,
         pl.col('name').mode().str.join(' | ').alias('name')
     )
 
+    #join the new names
     div = divisions.select(
         pl.exclude('name', 'sport.id')
     ).join(
@@ -298,6 +306,7 @@ def transform_divisions(divisions: pl.LazyFrame,
         pl.exclude('season')
     ).unique()
     return div, div_seasons
+
 def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
     lf = lf.select(
         pl.col('id').alias('team_id'),
