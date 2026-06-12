@@ -79,19 +79,9 @@ class DivisionSeasonsSchema(dy.Schema):
     division_id = dy.UInt32(nullable=False, primary_key=True)
     season = dy.UInt32(nullable=False, primary_key=True)
 
-class SportsSeasons(dy.Collection):
-    sports: dy.LazyFrame[SportSchema]
-    seasons: dy.LazyFrame[LeagueSeasonSchema]
 
-    @dy.filter()
-    def seasons_sports(self)->pl.LazyFrame:
-        #every season must reference a valid sport and every sport must be referenced by
-        # at least one season
-        return self.sports.join(
-            self.seasons,
-            on='sport_id',
-            how='inner'
-        ).select('sport_id').unique().lazy()
+
+    
 
 
 class TeamSchema(dy.Schema):
@@ -103,17 +93,43 @@ class TeamSchema(dy.Schema):
 class TeamSeasonSchema(dy.Schema):
     squad_id = dy.UInt32(nullable=False, primary_key=True)
     team_id = dy.UInt32(nullable=False)
-    season = dy.UInt32(nullable=False)
+    league_id = dy.Int32(nullable=False, primary_key=True)
+    year = dy.UInt32(nullable=False)
+    division_id = dy.UInt32(nullable=True)
     team_name = dy.String(nullable=False)
     team_code = dy.String(nullable=False)
-    league_id = dy.Int32(nullable=False, primary_key=True)
-    sport_id = dy.UInt32(nullable=False)
-    division_id = dy.UInt32(nullable=True)
+    sport_id = dy.UInt32(nullable=False, primary_key=True)
     location_name = dy.String(nullable=True)
     venue_id = dy.UInt32(nullable=True)
     spring_league_id = dy.UInt32(nullable=True)
     spring_venue_id = dy.UInt32(nullable=True)
     parent_org_id = dy.UInt32(nullable=True)
+
+class SportsCollection(dy.Collection):
+    sports: dy.LazyFrame[SportSchema]
+    league_seasons: dy.LazyFrame[LeagueSeasonSchema]
+    team_seasons: dy.LazyFrame[TeamSeasonSchema]
+    
+    @dy.filter()
+    def league_seasons_sports(self)->pl.LazyFrame:
+        #every league season must reference a valid sport and every sport must be referenced by
+        # at least one season
+        return self.sports.join(
+            self.league_seasons,
+            on='sport_id',
+            how='inner'
+        ).select('sport_id').unique().lazy()
+    
+    @dy.filter()
+    def team_seasons_sports(self)->pl.LazyFrame:
+        #every team season must reference a valid sport and every sport must be referenced by
+        # at least one team_season
+        return self.sports.join(
+            self.team_seasons,
+            on='sport_id',
+            how='inner'
+        ).select('sport_id').unique().lazy()
+    
 
 class LeagueCollection(dy.Collection):
     leagues: dy.LazyFrame[LeagueSchema]
@@ -126,6 +142,7 @@ class LeagueCollection(dy.Collection):
         #every reference to league_id must be valid
 
         #add -1 so that unaffillieated teams are not removed
+        
         return pl.concat( [
             self.leagues.select('league_id').cast(pl.Int64),
             pl.LazyFrame(
@@ -313,6 +330,7 @@ def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
         pl.col('name').alias('team_name'),
         pl.col('league.id').alias('league_id'),
         pl.col('season').alias('year'),
+        pl.col('sport.id').alias('sport_id'),
         pl.col('division.id').alias('division_id'),
         pl.col('teamCode').alias('team_code'),
         pl.col('locationName').alias('location_name'),
@@ -321,7 +339,14 @@ def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
         pl.col('springVenue.id').alias('spring_venue_id'),
         pl.col('link').alias('team_link'),
         pl.col('active').alias('is_active'),
-        pl.col('parentOrgId').alias('parent_org_id'),
+        #pl.col('parentOrgId').alias('parent_org_id'),
+        ##college teams have parentOrg listed as 11 which is the office of the commissioner, not a team
+        pl.when(pl.col('sport.id').eq(22)).then(
+            pl.col('parentOrgId').replace(11,None)
+        ).otherwise(
+            pl.col('parentOrgId')
+        ).alias('parent_org_id'),
+
         pl.col('firstYearOfPlay').alias('first_year')
     )
 
@@ -354,7 +379,7 @@ def transform_teams(lf:pl.LazyFrame)->tuple[pl.LazyFrame, pl.LazyFrame]:
     ).unique()
 
     teams_seasons = lf.select(
-        cs.exclude(['team_link', 'is_active'])
+        cs.exclude(['team_link', 'is_active', 'first_year'])
     ).with_row_index(name='squad_id').collect().lazy()
     #materialize the row index: projection pushdown would otherwise drop
     #'squad_id' during lazy validation (ColumnNotFoundError)
