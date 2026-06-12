@@ -8,6 +8,7 @@ environments:
     packages:
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/adbc-driver-postgresql-1.11.0-pyha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/altair-6.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-doc-0.0.4-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
@@ -50,6 +51,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/hyperframe-6.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/idna-3.17-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/importlib-metadata-8.7.1-pyhcf101f3_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/importlib_resources-7.1.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/itsdangerous-2.2.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jedi-0.19.2-pyhd8ed1ab_1.conda
@@ -119,6 +121,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/xyzservices-2026.3.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-4.1.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/_openmp_mutex-4.5-20_gnu.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/adbc-driver-manager-1.11.0-py313hfe59770_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/arro3-core-0.8.0-py313hf61f64f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/aws-c-auth-0.10.3-h4e4e17b_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/aws-c-cal-0.9.14-haa6dc3d_1.conda
@@ -157,6 +160,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/lcms2-2.19.1-hf2c6c5f_1.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/lerc-4.1.0-hd936e49_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libabseil-20260107.1-cxx17_h0eb2380_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/libadbc-driver-postgresql-1.11.0-hb6ce47c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libarrow-24.0.0-hab65375_4_cpu.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libarrow-acero-24.0.0-h7d8d6a5_4_cpu.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/libarrow-compute-24.0.0-h081cd8e_4_cpu.conda
@@ -279,6 +283,20 @@ packages:
   license_family: MIT
   size: 8191
   timestamp: 1744137672556
+- conda: https://conda.anaconda.org/conda-forge/noarch/adbc-driver-postgresql-1.11.0-pyha770c72_0.conda
+  sha256: 77877d94f58044692bb8878356305b3a9cad2737b2c90f122ea73be8457924d0
+  md5: 11cce1ee72c7f35f42e18116aa698e04
+  depends:
+  - adbc-driver-manager >=1.11.0,<2.0a0
+  - importlib_resources
+  - libadbc-driver-postgresql >=1.11.0,<1.11.1.0a0
+  - python >=3.10
+  constrains:
+  - pyarrow >=8.0.0
+  license: Apache-2.0
+  license_family: APACHE
+  size: 31243
+  timestamp: 1775527180443
 - conda: https://conda.anaconda.org/conda-forge/noarch/altair-6.1.0-pyhd8ed1ab_0.conda
   sha256: fdb791d8310f9969d8d0254bce45620f0d1c3d7a3101c1ef5efb2ffdb1471f8c
   md5: 4657762ceeaeadad947f0e6e3e0e0993
@@ -786,6 +804,18 @@ packages:
   license_family: APACHE
   size: 34727
   timestamp: 1779719562556
+- conda: https://conda.anaconda.org/conda-forge/noarch/importlib_resources-7.1.0-pyhd8ed1ab_0.conda
+  sha256: a563a51aa522998172838e867e6dedcf630bc45796e8612f5a1f6d73e9c8125a
+  md5: 0ba6225c279baf7ea9473a62ea0ec9ae
+  depends:
+  - python >=3.10
+  - zipp >=3.1.0
+  constrains:
+  - importlib-resources >=7.1.0,<7.1.1.0a0
+  license: Apache-2.0
+  license_family: APACHE
+  size: 34809
+  timestamp: 1776068839274
 - conda: https://conda.anaconda.org/conda-forge/noarch/iniconfig-2.3.0-pyhd8ed1ab_0.conda
   sha256: e1a9e3b1c8fe62dc3932a616c284b5d8cbe3124bbfbedcf4ce5c828cb166ee19
   md5: 9614359868482abba1bd15ce465e3c42
@@ -1589,6 +1619,21 @@ packages:
   license_family: BSD
   size: 52252
   timestamp: 1770943776666
+- conda: https://conda.anaconda.org/conda-forge/win-64/adbc-driver-manager-1.11.0-py313hfe59770_0.conda
+  sha256: d98620e57474645e41ba818657060f3ff4e1cdc6179d72d8ca95bcab5ead882c
+  md5: a86030314b5f44a8dc7486f85b151542
+  depends:
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - ucrt >=10.0.20348.0
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  constrains:
+  - pyarrow >=8.0.0
+  license: Apache-2.0
+  license_family: APACHE
+  size: 483893
+  timestamp: 1775526732963
 - conda: https://conda.anaconda.org/conda-forge/win-64/arro3-core-0.8.0-py313hf61f64f_0.conda
   sha256: 6a569dcecc75a89774009b99c17c0943f20fd4413a3da70206ad4bea449f57be
   md5: 397825191c463e383d6c3d9f0bc08ce2
@@ -2101,6 +2146,18 @@ packages:
   license_family: Apache
   size: 1884784
   timestamp: 1770863303486
+- conda: https://conda.anaconda.org/conda-forge/win-64/libadbc-driver-postgresql-1.11.0-hb6ce47c_0.conda
+  sha256: 4ef2ff764d4667b51de792bd392f0dec6da826d73990c3450c9b1d574e6fbe40
+  md5: 5e5e49734bbf5cb880ebe878bdeac056
+  depends:
+  - libpq >=18.3,<19.0a0
+  - ucrt >=10.0.20348.0
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  license: Apache-2.0
+  license_family: APACHE
+  size: 223107
+  timestamp: 1775527246975
 - conda: https://conda.anaconda.org/conda-forge/win-64/libarrow-24.0.0-hab65375_4_cpu.conda
   build_number: 4
   sha256: 38b7c7dd2519052242f794d45301ab9ed62946b7e90ca2b7cde76b3eef6eb1fe
