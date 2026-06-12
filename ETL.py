@@ -1,14 +1,13 @@
 import marimo
 
 __generated_with = "0.23.9"
-app = marimo.App(width="columns")
+app = marimo.App(width="full")
 
 
-@app.cell(column=0)
+@app.cell
 def _():
     from pathlib import Path
 
-    import duckdb
     import marimo as mo
     import polars as pl
 
@@ -18,10 +17,10 @@ def _():
         DivisionSeasonsSchema,
         LeagueCollection,
         LeagueSchema,
-        SeasonSchema,
+        LeagueSeasonSchema,
         SportSchema,
-        SportsSeasons,
-        TeamsBySeasonSchema,
+        SportsCollection,
+        TeamSeasonSchema,
         TeamSchema,
         transform_divisions,
         transform_leagues,
@@ -32,19 +31,18 @@ def _():
 
     import sqlalchemy
 
-    DATABASE_URL = f"postgresql://postgres:POSTGRES_PASSWORD@localhost:5432/saber"
+
     return (
-        DATABASE_URL,
         DivisionSchema,
         DivisionSeasonsSchema,
         LeagueCollection,
         LeagueSchema,
+        LeagueSeasonSchema,
         Path,
-        SeasonSchema,
         SportSchema,
-        SportsSeasons,
+        SportsCollection,
         TeamSchema,
-        TeamsBySeasonSchema,
+        TeamSeasonSchema,
         endpoints,
         get,
         pl,
@@ -58,9 +56,10 @@ def _():
 
 
 @app.cell
-def _(DATABASE_URL, sqlalchemy):
+def _(sqlalchemy):
+    DATABASE_URL = f"postgresql://postgres:POSTGRES_PASSWORD@localhost:5432/saber"
     engine = sqlalchemy.create_engine(DATABASE_URL)
-    return
+    return (engine,)
 
 
 @app.cell
@@ -86,11 +85,11 @@ def _(
     DivisionSeasonsSchema,
     LeagueCollection,
     LeagueSchema,
-    SeasonSchema,
+    LeagueSeasonSchema,
     SportSchema,
-    SportsSeasons,
+    SportsCollection,
     TeamSchema,
-    TeamsBySeasonSchema,
+    TeamSeasonSchema,
     data,
     pl,
     transform_divisions,
@@ -109,12 +108,13 @@ def _(
     sports = transform_sports(sports)
     leagues = transform_leagues(leagues)
     divisions, division_seasons = transform_divisions(divisions, leagues)
-    seasons = transform_seasons(seasons)
-    teams, team_seasons = transform_teams(teams)
+    league_seasons = transform_seasons(seasons)
+    league_seasons = LeagueSeasonSchema.validate(league_seasons, cast=True).lazy()
+    teams, team_seasons = transform_teams(teams, league_seasons)
     #validate schemas
     sports = SportSchema.validate(sports, cast=True).lazy()
     leagues =  LeagueSchema.validate(leagues, cast=True).lazy()
-    seasons = SeasonSchema.validate(seasons, cast=True).lazy()
+    #league_seasons = LeagueSeasonSchema.validate(league_seasons, cast=True).lazy()
     divisions = DivisionSchema.validate(divisions, cast=True).lazy()
     division_seasons = DivisionSeasonsSchema.validate(
         division_seasons, cast=True
@@ -123,20 +123,35 @@ def _(
     team_seasons = team_seasons.with_columns(
         pl.col.league_id.fill_null(-1)
     )
-    team_seasons = TeamsBySeasonSchema.validate(team_seasons, cast=True).lazy()
+    team_seasons = TeamSeasonSchema.validate(team_seasons, cast=True).lazy()
 
-    SC, _bad = SportsSeasons.filter({'sports':sports, 'seasons':seasons})
+    SC, bad = SportsCollection.filter({'sports':sports, 'league_seasons':league_seasons, 'team_seasons': team_seasons})
     LC = LeagueCollection.validate({
         'leagues': leagues,
         'divisions': divisions,
-        'seasons': SC.seasons,
+        'league_seasons': SC.league_seasons,
         'team_seasons': team_seasons
     })
-    return
+    return LC, SC, teams
 
 
-@app.cell(column=1)
-def _():
+@app.cell
+def _(LC, SC, engine, teams):
+    frames = {
+        'api.sports': SC.sports,
+        'api.leagues': LC.leagues,
+        'api.teams': teams,
+        'api.league_seasons': LC.league_seasons,
+        'api.divisions': LC.divisions,
+        'api.team_seasons': LC.team_seasons,
+    }
+    for _table, _lf in frames.items():
+        _lf.collect().write_database(
+            table_name=_table,
+            connection=engine,
+            engine='sqlalchemy',
+            if_table_exists='append',
+        )
     return
 
 
