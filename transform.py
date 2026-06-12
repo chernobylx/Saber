@@ -340,17 +340,20 @@ def transform_teams(lf:pl.LazyFrame, league_seasons:pl.LazyFrame)->tuple[pl.Lazy
         pl.col('springVenue.id').alias('spring_venue_id'),
         pl.col('link').alias('team_link'),
         pl.col('active').alias('is_active'),
-        #pl.col('parentOrgId').alias('parent_org_id'),
-        ##college teams have parentOrg listed as 11 which is the office of the commissioner, not a team
-        pl.when(pl.col('sport.id').eq(22)).then(
-            pl.col('parentOrgId').replace(11,None)
-        ).otherwise(
-            pl.col('parentOrgId')
-        ).alias('parent_org_id'),
-
+        pl.col('parentOrgId').alias('parent_org_id'),
         pl.col('firstYearOfPlay').alias('first_year')
     )
 
+    lf = lf.with_columns(
+        pl.when(
+        pl.col('parent_org_id').eq(11)
+        ).then(
+            pl.lit(None)
+        ).otherwise(
+            pl.col('parent_org_id')
+        ).alias('parent_org_id')
+    )
+    
     name_modes = lf.group_by(
         'team_id'
     ).agg(
