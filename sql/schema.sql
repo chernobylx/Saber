@@ -108,7 +108,7 @@ CREATE TABLE api.team_seasons (
 	squad_id INTEGER not null,
     team_id INTEGER NOT NULL ,
     season_id INTEGER NOT NULL,
-    --league_id        INTEGER  ,  -- signed: -1 marks unaffiliated teams
+    league_id        INTEGER  ,  -- signed: -1 marks unaffiliated teams
     --year INTEGER NOT NULL,
     sport_id INTEGER not null,
     division_id INTEGER,
