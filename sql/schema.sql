@@ -121,7 +121,7 @@ CREATE TABLE api.team_seasons (
     parent_org_id INTEGER references api.teams (team_id),
     -----------------------------------------------------------
     CONSTRAINT pk_team_seasons primary key(squad_id),
-    constraint fk_team_seasons_leagues foreign key (league_id) references api.leagues (league_id),
+    --constraint fk_team_seasons_leagues foreign key (league_id) references api.leagues (league_id),
     constraint fk_team_seasons_teams foreign key (team_id) REFERENCES api.teams (team_id),
     constraint fk_team_seasons_league_seasons foreign key (season_id) REFERENCES api.league_seasons (season_id),
     constraint fk_team_seasons_divisions foreign key (division_id) references api.divisions  (division_id),
