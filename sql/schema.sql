@@ -8,7 +8,7 @@ rollback;
 
 Begin Transaction;
 
-drop schema api cascade;
+drop schema if exists api cascade;
 
 CREATE SCHEMA api;
 
@@ -109,7 +109,8 @@ CREATE TABLE api.team_seasons (
     team_id INTEGER NOT NULL ,
     league_id        INTEGER  ,  -- signed: -1 marks unaffiliated teams
     year INTEGER NOT NULL,
-    division_id INTEGER not null,
+    sport_id INTEGER not null,
+    division_id INTEGER,
     team_name        TEXT     NOT NULL,
     team_code        TEXT     NOT NULL,
     location_name    TEXT,
@@ -117,16 +118,14 @@ CREATE TABLE api.team_seasons (
     spring_league_id INTEGER CHECK (spring_league_id>=0),
     spring_venue_id INTEGER CHECK (spring_venue_id>=0),
     parent_org_id INTEGER references api.teams (team_id),
-    is_ative BOOLEAN not null,
-    team_link API_LINK not null,
-    first_year integer not null check (first_year>0),
     -----------------------------------------------------------
     CONSTRAINT pk_team_seasons primary key(squad_id),
     constraint fk_team_seasons_leagues foreign key (league_id) references api.leagues (league_id),
     constraint fk_team_seasons_teams foreign key (team_id) REFERENCES api.teams (team_id),
     constraint fk_team_seasons_league_seasons foreign key (league_id, year) REFERENCES api.league_seasons (league_id, year),
     constraint fk_team_seasons_divisions foreign key (division_id) references api.divisions  (division_id),
-    constraint fk_team_seasons_spring_league foreign key (spring_league_id) references api.leagues (league_id)
+    constraint fk_team_seasons_spring_league foreign key (spring_league_id) references api.leagues (league_id),
+    constraint fk_team_seasons_sports foreign key (sport_id) references api.sports (sport_id)
 );
 
 create type api.roster_types
