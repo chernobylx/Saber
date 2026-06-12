@@ -26,6 +26,7 @@ class LeagueSchema(dy.Schema):
 class LeagueSeasonSchema(dy.Schema):
     season_id = dy.UInt32(nullable=False, primary_key=True)
     league_id = dy.UInt32(nullable=False, primary_key=True)
+    sport_id = dy.UInt32(nullable=False, primary_key=True)
     year = dy.UInt32(nullable=False)
     sport_id = dy.UInt32(nullable=False)
     n_games = dy.UInt32(nullable=False)
