@@ -28,7 +28,6 @@ class LeagueSeasonSchema(dy.Schema):
     league_id = dy.UInt32(nullable=False, primary_key=True)
     sport_id = dy.UInt32(nullable=False, primary_key=True)
     year = dy.UInt32(nullable=False)
-    sport_id = dy.UInt32(nullable=False)
     n_games = dy.UInt32(nullable=False)
     n_teams = dy.UInt32(nullable=False)
     has_divisions = dy.Bool(nullable=False)
@@ -52,7 +51,7 @@ class LeagueSeasonSchema(dy.Schema):
 
     @dy.rule()
     def unique_seasons(cls) -> pl.Expr:
-        return pl.col('year', 'league_id').is_unique()
+        return pl.struct('year', 'league_id').is_unique()
     @dy.rule()
     def general_causality(cls)->pl.Expr:
         expr = pl.col('pre_start') <= pl.col('pre_end')
@@ -120,7 +119,7 @@ class LeagueCollection(dy.Collection):
     leagues: dy.LazyFrame[LeagueSchema]
     divisions: dy.LazyFrame[DivisionSchema]
     team_seasons: dy.LazyFrame[TeamSeasonSchema]
-    seasons: dy.LazyFrame[LeagueSeasonSchema]
+    league_seasons: dy.LazyFrame[LeagueSeasonSchema]
 
     @dy.filter()
     def enforce_foreign_keys(self)->pl.LazyFrame:
@@ -189,7 +188,7 @@ def transform_leagues(df: pl.LazyFrame)-> pl.LazyFrame:
 def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame:
     lf = lf.select(
         pl.col('id').alias('league_id'),
-        pl.col('season'),
+        pl.col('season').alias('year'),
         pl.col('sport.id').alias('sport_id'),
         pl.col('numGames').alias('n_games'),
         pl.col('numTeams').alias('n_teams'),
@@ -259,7 +258,7 @@ def transform_seasons(lf:pl.LazyFrame)-> pl.LazyFrame:
         ).otherwise(
             pl.col('off_end')
         ).alias('off_end')
-    ).lazy()
+    ).with_row_index(name = 'season_id').lazy()
 
     return lf
 
