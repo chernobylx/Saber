@@ -380,25 +380,27 @@ def transform_teams(lf:pl.LazyFrame, league_seasons:pl.LazyFrame)->tuple[pl.Lazy
         ['team_id', 'is_active', 'team_link', 'first_year']
     ).unique()
 
-    teams_seasons = lf.select(
+    team_seasons = lf.select(
         cs.exclude(['team_link', 'is_active', 'first_year'])
     ).with_row_index(name='squad_id').collect().lazy()
     #materialize the row index: projection pushdown would otherwise drop
     #'squad_id' during lazy validation (ColumnNotFoundError)
 
     #join on league seasons to get season_id
-    lf = lf.join(
+    team_seasons = team_seasons.join(
         league_seasons.select(
             pl.col('season_id'),
             pl.col('league_id'),
             pl.col('year'),
-        ).lazy(),
+        ),
         left_on=['league_id', 'year'],
         right_on=['league_id', 'year'],
         how='left'
     ).select(
         cs.exclude(['year'])
+    ).filter(
+        ~pl.col('season_id').is_null()
     )
-    return teams, teams_seasons
+    return teams, team_seasons
 
 
